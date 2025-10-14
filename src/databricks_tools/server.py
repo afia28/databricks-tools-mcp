@@ -11,16 +11,17 @@ from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 from databricks_tools.config.workspace import WorkspaceConfigManager
+from databricks_tools.security.role_manager import Role, RoleManager
 
 # Initialize FastMCP server
 load_dotenv()
 mcp = FastMCP("databricks_sql")
 
-# Role-based access control (default is analyst)
-ROLE = "analyst"
+# AIDEV-NOTE: Role-based access control using RoleManager (default is analyst)
+_role_manager = RoleManager(role=Role.ANALYST)
 
-# Workspace configuration manager instance (initialized with role)
-_workspace_manager = WorkspaceConfigManager(role=ROLE)
+# Workspace configuration manager instance (initialized with role_manager)
+_workspace_manager = WorkspaceConfigManager(role_manager=_role_manager)
 
 # Token limit constant
 MAX_RESPONSE_TOKENS = 9000  # MCP server limit is 25,000, keep 1,000 token buffer
@@ -1148,7 +1149,7 @@ async def list_and_describe_all_functions(
 
 def main():
     """Main entry point for the databricks-tools MCP server."""
-    global ROLE, _workspace_manager
+    global _role_manager, _workspace_manager
 
     # Parse command-line arguments for role-based access control
     parser = argparse.ArgumentParser(description="Databricks MCP Server")
@@ -1160,11 +1161,11 @@ def main():
 
     args = parser.parse_args()
 
-    # Set role based on command-line flag
+    # AIDEV-NOTE: Update role manager and workspace manager if developer mode enabled
     if args.developer:
-        ROLE = "developer"
-        # Reinitialize workspace manager with developer role
-        _workspace_manager = WorkspaceConfigManager(role=ROLE)
+        _role_manager = RoleManager(role=Role.DEVELOPER)
+        # Reinitialize workspace manager with developer role manager
+        _workspace_manager = WorkspaceConfigManager(role_manager=_role_manager)
 
     # Initialize and run the server
     mcp.run(transport="stdio")

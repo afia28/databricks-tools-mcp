@@ -28,8 +28,10 @@ uv run pytest tests/ --cov=src/databricks_tools  # Run tests with coverage
 - `src/databricks_tools/server.py` - Main MCP server with all 13 tools
 - `src/databricks_tools/config/models.py` - Pydantic configuration models (US-1.1)
 - `src/databricks_tools/config/workspace.py` - Workspace configuration manager (US-1.2)
+- `src/databricks_tools/security/role_manager.py` - Role-based access control manager (US-1.3)
 - `tests/test_config/test_models.py` - Configuration model tests (32 tests, 100% coverage)
-- `tests/test_config/test_workspace.py` - Workspace manager tests (14 tests, 100% coverage)
+- `tests/test_config/test_workspace.py` - Workspace manager tests (14 tests, 94% coverage)
+- `tests/test_security/test_role_manager.py` - Role manager tests (21 tests, 92% coverage)
 - `pyproject.toml` - Project configuration and dependencies
 - `.env` - Databricks workspace credentials (not in git)
 
@@ -117,5 +119,14 @@ For incremental improvements:
 - Role-based access control (analyst/developer modes)
 - Workspace discovery from environment variables
 - Backward compatible integration with server.py
-- 14 tests, 100% coverage
-- Total config tests: 46 tests, 100% coverage
+- 14 tests, 94% coverage
+
+**US-1.3: Create Role-Based Access Control Manager** - Completed
+- Implemented Strategy pattern for role-based access control
+- Role enum (ANALYST, DEVELOPER) for type-safe role definitions
+- RoleStrategy ABC with AnalystStrategy and DeveloperStrategy implementations
+- RoleManager delegates workspace access decisions to appropriate strategy
+- Integrated with WorkspaceConfigManager (backward compatible)
+- Updated server.py to use RoleManager instead of string-based roles
+- 21 tests, 92% coverage
+- Total tests: 67 tests, all passing

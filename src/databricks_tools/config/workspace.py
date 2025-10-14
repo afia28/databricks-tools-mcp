@@ -9,6 +9,7 @@ import logging
 import os
 
 from databricks_tools.config.models import WorkspaceConfig
+from databricks_tools.security.role_manager import Role, RoleManager
 
 logger = logging.getLogger(__name__)
 
@@ -26,44 +27,95 @@ class WorkspaceConfigManager:
     for creating WorkspaceConfig instances.
 
     Args:
-        role: User role, either "analyst" or "developer". Defaults to "analyst".
-            - "analyst": Restricted to default workspace only
-            - "developer": Full access to all configured workspaces
+        role_manager: RoleManager instance for access control. If None, creates a
+            default RoleManager with ANALYST role (principle of least privilege).
+            For backward compatibility, also accepts string role values ("analyst",
+            "developer") which will be converted to a RoleManager internally.
 
     Raises:
-        ValueError: If role is not "analyst" or "developer".
+        ValueError: If string role is not "analyst" or "developer".
 
     Examples:
-        Create manager for analyst (restricted access):
-        >>> manager = WorkspaceConfigManager(role="analyst")
+        Create manager with RoleManager (recommended):
+        >>> from databricks_tools.security.role_manager import RoleManager, Role
+        >>> role_mgr = RoleManager(role=Role.ANALYST)
+        >>> manager = WorkspaceConfigManager(role_manager=role_mgr)
         >>> config = manager.get_workspace_config()  # Always returns default
         >>> workspaces = manager.get_available_workspaces()  # ["default"]
 
         Create manager for developer (full access):
-        >>> dev_manager = WorkspaceConfigManager(role="developer")
+        >>> role_mgr = RoleManager(role=Role.DEVELOPER)
+        >>> dev_manager = WorkspaceConfigManager(role_manager=role_mgr)
         >>> prod_config = dev_manager.get_workspace_config("production")
         >>> all_workspaces = dev_manager.get_available_workspaces()
         >>> print(all_workspaces)  # ["default", "production", "staging"]
+
+        Backward compatible string initialization:
+        >>> manager = WorkspaceConfigManager(role_manager="analyst")
+        >>> manager.role_manager.role
+        <Role.ANALYST: 'analyst'>
 
         Handle missing workspaces with fallback:
         >>> config = dev_manager.get_workspace_config("nonexistent")
         # Falls back to default workspace with warning
     """
 
-    def __init__(self, role: str = "analyst") -> None:
+    def __init__(
+        self,
+        role_manager: RoleManager | str | None = None,
+        role: str | None = None,
+    ) -> None:
         """Initialize workspace configuration manager with role-based access.
 
         Args:
-            role: User role, either "analyst" or "developer". Defaults to "analyst".
+            role_manager: RoleManager instance, string role ("analyst"/"developer"),
+                or None for default analyst role. Defaults to None.
+            role: (Deprecated) String role for backward compatibility. Use role_manager
+                parameter instead. If both are provided, role_manager takes precedence.
 
         Raises:
-            ValueError: If role is not "analyst" or "developer".
+            ValueError: If string role is not "analyst" or "developer".
         """
-        if role not in ("analyst", "developer"):
-            raise ValueError(
-                f"Invalid role '{role}'. Role must be either 'analyst' or 'developer'."
-            )
-        self.role = role
+        # AIDEV-NOTE: Backward compatibility - support both old 'role' parameter and new 'role_manager'
+        if role_manager is not None:
+            # New parameter takes precedence
+            if isinstance(role_manager, str):
+                # Backward compatibility: convert string role to RoleManager
+                if role_manager not in ("analyst", "developer"):
+                    raise ValueError(
+                        f"Invalid role '{role_manager}'. Role must be either 'analyst' or 'developer'."
+                    )
+                self.role_manager = RoleManager(role=role_manager)
+            else:
+                # Use provided RoleManager instance
+                self.role_manager = role_manager
+        elif role is not None:
+            # Old parameter for backward compatibility
+            if role not in ("analyst", "developer"):
+                raise ValueError(
+                    f"Invalid role '{role}'. Role must be either 'analyst' or 'developer'."
+                )
+            self.role_manager = RoleManager(role=role)
+        else:
+            # Default to analyst role (principle of least privilege)
+            self.role_manager = RoleManager(role=Role.ANALYST)
+
+    @property
+    def role(self) -> str:
+        """Get the current role as a string (backward compatibility).
+
+        This property provides backward compatibility for code that accesses
+        the role attribute directly.
+
+        Returns:
+            The role as a string ("analyst" or "developer").
+
+        Examples:
+            >>> manager = WorkspaceConfigManager(role="analyst")
+            >>> manager.role
+            'analyst'
+        """
+        return self.role_manager.role.value
 
     def get_workspace_config(self, workspace: str | None = None) -> WorkspaceConfig:
         """Get configuration for specified workspace with role-based access control.
@@ -86,12 +138,14 @@ class WorkspaceConfigManager:
 
         Examples:
             Analyst mode (always uses default):
-            >>> manager = WorkspaceConfigManager(role="analyst")
+            >>> role_mgr = RoleManager(role=Role.ANALYST)
+            >>> manager = WorkspaceConfigManager(role_manager=role_mgr)
             >>> config = manager.get_workspace_config("production")
             # Returns default workspace, ignoring "production" parameter
 
             Developer mode (can access specific workspaces):
-            >>> manager = WorkspaceConfigManager(role="developer")
+            >>> role_mgr = RoleManager(role=Role.DEVELOPER)
+            >>> manager = WorkspaceConfigManager(role_manager=role_mgr)
             >>> config = manager.get_workspace_config("production")
             >>> config.workspace_name
             'production'
@@ -100,9 +154,10 @@ class WorkspaceConfigManager:
             >>> config = manager.get_workspace_config("missing")
             # Logs warning and returns default workspace
         """
-        # In analyst mode, always use default workspace regardless of input
-        if self.role == "analyst":
-            workspace = None  # Force default workspace
+        # AIDEV-NOTE: Use RoleManager to normalize workspace request based on role
+        # In analyst mode, this will force None (default workspace)
+        # In developer mode, this will preserve the requested workspace
+        workspace = self.role_manager.normalize_workspace_request(workspace)
 
         # Attempt to load the requested workspace
         if workspace is None:
@@ -117,8 +172,8 @@ class WorkspaceConfigManager:
             if config is not None:
                 return config
 
-            # In developer mode, try to fall back to default workspace
-            if self.role == "developer":
+            # AIDEV-NOTE: In developer mode, try to fall back to default workspace
+            if self.role_manager.role == Role.DEVELOPER:
                 logger.warning(f"Workspace '{workspace}' not found, using default workspace")
                 default_config = self._load_workspace_from_env(prefix="")
                 if default_config is not None:
@@ -155,32 +210,27 @@ class WorkspaceConfigManager:
 
         Examples:
             Analyst mode (restricted access):
-            >>> manager = WorkspaceConfigManager(role="analyst")
+            >>> role_mgr = RoleManager(role=Role.ANALYST)
+            >>> manager = WorkspaceConfigManager(role_manager=role_mgr)
             >>> workspaces = manager.get_available_workspaces()
             >>> print(workspaces)
             ['default']
 
             Developer mode (full access):
-            >>> manager = WorkspaceConfigManager(role="developer")
+            >>> role_mgr = RoleManager(role=Role.DEVELOPER)
+            >>> manager = WorkspaceConfigManager(role_manager=role_mgr)
             >>> workspaces = manager.get_available_workspaces()
             >>> print(workspaces)
             ['default', 'production', 'staging']
 
             No workspaces configured:
-            >>> manager = WorkspaceConfigManager(role="developer")
+            >>> role_mgr = RoleManager(role=Role.DEVELOPER)
+            >>> manager = WorkspaceConfigManager(role_manager=role_mgr)
             >>> workspaces = manager.get_available_workspaces()
             >>> print(workspaces)
             []
         """
-        # For analyst role, only return default workspace if it exists
-        if self.role == "analyst":
-            default_config = self._load_workspace_from_env(prefix="")
-            if default_config is not None:
-                return ["default"]
-            else:
-                return []
-
-        # For developer role, return all available workspaces
+        # AIDEV-NOTE: Discover all workspaces, then filter based on role permissions
         workspaces = set()
 
         # Check for default workspace (empty prefix)
@@ -197,7 +247,10 @@ class WorkspaceConfigManager:
                 workspace_name = prefix.lower()
                 workspaces.add(workspace_name)
 
-        return sorted(workspaces)
+        # AIDEV-NOTE: Use RoleManager to filter workspaces based on role permissions
+        # Analyst role: Returns only ["default"] if present
+        # Developer role: Returns all workspaces
+        return self.role_manager.filter_workspaces(sorted(workspaces))
 
     def _load_workspace_from_env(self, prefix: str = "") -> WorkspaceConfig | None:
         """Load workspace configuration from environment variables with given prefix.

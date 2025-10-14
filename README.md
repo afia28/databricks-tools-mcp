@@ -136,11 +136,17 @@ databricks-tools-clean/
          __init__.py
          models.py        # Pydantic configuration models (US-1.1)
          workspace.py     # Workspace configuration manager (US-1.2)
+      security/
+         __init__.py
+         role_manager.py  # Role-based access control manager (US-1.3)
    tests/
       test_config/
          __init__.py
          test_models.py   # Configuration model tests (32 tests, 100% coverage)
-         test_workspace.py # Workspace manager tests (14 tests, 100% coverage)
+         test_workspace.py # Workspace manager tests (14 tests, 94% coverage)
+      test_security/
+         __init__.py
+         test_role_manager.py # Role manager tests (21 tests, 92% coverage)
    .github/workflows/
       ci.yml              # CI/CD pipeline
       claude-code.yml     # Claude Code integration
