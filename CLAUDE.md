@@ -27,7 +27,9 @@ uv run pytest tests/ --cov=src/databricks_tools  # Run tests with coverage
 
 - `src/databricks_tools/server.py` - Main MCP server with all 13 tools
 - `src/databricks_tools/config/models.py` - Pydantic configuration models (US-1.1)
+- `src/databricks_tools/config/workspace.py` - Workspace configuration manager (US-1.2)
 - `tests/test_config/test_models.py` - Configuration model tests (32 tests, 100% coverage)
+- `tests/test_config/test_workspace.py` - Workspace manager tests (14 tests, 100% coverage)
 - `pyproject.toml` - Project configuration and dependencies
 - `.env` - Databricks workspace credentials (not in git)
 
@@ -100,3 +102,20 @@ For incremental improvements:
 - **Connection errors**: Check `.env` file has correct credentials
 - **Token errors**: Verify Databricks tokens haven't expired
 - **MCP errors**: Test with `uv run databricks-tools` directly
+
+## User Story Status
+
+### Completed User Stories
+
+**US-1.1: Pydantic Configuration Models** - Completed
+- Created WorkspaceConfig and ServerConfig Pydantic models
+- Comprehensive validation and type safety
+- 32 tests, 100% coverage
+
+**US-1.2: Extract Workspace Configuration Manager** - Completed
+- WorkspaceConfigManager with Factory pattern
+- Role-based access control (analyst/developer modes)
+- Workspace discovery from environment variables
+- Backward compatible integration with server.py
+- 14 tests, 100% coverage
+- Total config tests: 46 tests, 100% coverage

@@ -10,12 +10,17 @@ from databricks import sql
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
+from databricks_tools.config.workspace import WorkspaceConfigManager
+
 # Initialize FastMCP server
 load_dotenv()
 mcp = FastMCP("databricks_sql")
 
 # Role-based access control (default is analyst)
 ROLE = "analyst"
+
+# Workspace configuration manager instance (initialized with role)
+_workspace_manager = WorkspaceConfigManager(role=ROLE)
 
 # Token limit constant
 MAX_RESPONSE_TOKENS = 9000  # MCP server limit is 25,000, keep 1,000 token buffer
@@ -26,8 +31,11 @@ CHUNK_SESSIONS: dict[str, dict] = {}
 
 # Constants and Configuration
 def get_workspace_config(workspace: str | None = None) -> dict[str, str]:
-    """
-    Get configuration for a specific workspace.
+    """Get configuration for a specific workspace.
+
+    Legacy wrapper around WorkspaceConfigManager for backward compatibility.
+    This function maintains the original dict-based return type while using
+    the new WorkspaceConfigManager internally.
 
     Parameters:
     ----------
@@ -46,95 +54,29 @@ def get_workspace_config(workspace: str | None = None) -> dict[str, str]:
     ValueError
         If no workspace configuration is found.
     """
-    # In analyst mode, always use default workspace regardless of input
-    if ROLE == "analyst":
-        workspace = None  # Force default workspace
+    # Use WorkspaceConfigManager to get configuration
+    config = _workspace_manager.get_workspace_config(workspace)
 
-    # Determine prefix based on workspace
-    if workspace:
-        prefix = f"{workspace.upper()}_"
-    else:
-        prefix = ""
-
-    server_hostname = os.getenv(f"{prefix}DATABRICKS_SERVER_HOSTNAME")
-    http_path = os.getenv(f"{prefix}DATABRICKS_HTTP_PATH")
-    access_token = os.getenv(f"{prefix}DATABRICKS_TOKEN")
-
-    # In developer mode, fall back to default if workspace not found
-    if not all([server_hostname, http_path, access_token]):
-        if ROLE == "developer" and workspace is not None:
-            # Try default workspace as fallback
-            server_hostname = os.getenv("DATABRICKS_SERVER_HOSTNAME")
-            http_path = os.getenv("DATABRICKS_HTTP_PATH")
-            access_token = os.getenv("DATABRICKS_TOKEN")
-
-            if all([server_hostname, http_path, access_token]):
-                print(
-                    f"Warning: Workspace '{workspace}' not found, using default workspace",
-                    flush=True,
-                )
-            else:
-                available_workspaces = get_available_workspaces()
-                raise ValueError(
-                    f"Workspace '{workspace}' configuration not found and no default available. "
-                    f"Available workspaces: {', '.join(available_workspaces)}"
-                )
-        else:
-            available_workspaces = get_available_workspaces()
-            raise ValueError(
-                f"Workspace '{workspace or 'default'}' configuration not found. "
-                f"Available workspaces: {', '.join(available_workspaces)}"
-            )
-
+    # Convert WorkspaceConfig to dict for backward compatibility
     return {
-        "server_hostname": server_hostname,
-        "http_path": http_path,
-        "access_token": access_token,
+        "server_hostname": config.server_hostname,
+        "http_path": config.http_path,
+        "access_token": config.access_token.get_secret_value(),  # Extract from SecretStr
     }
 
 
 def get_available_workspaces() -> list[str]:
-    """
-    Get a list of configured workspaces based on environment variables.
+    """Get a list of configured workspaces based on environment variables.
+
+    Legacy wrapper around WorkspaceConfigManager for backward compatibility.
 
     Returns:
     -------
     List[str]
         List of available workspace names.
     """
-    # For analyst role, only return default workspace if it exists
-    if ROLE == "analyst":
-        if all(
-            [
-                os.getenv("DATABRICKS_SERVER_HOSTNAME"),
-                os.getenv("DATABRICKS_HTTP_PATH"),
-                os.getenv("DATABRICKS_TOKEN"),
-            ]
-        ):
-            return ["default"]
-        else:
-            return []
-
-    # For developer role, return all available workspaces
-    workspaces = set()
-
-    # Check for default workspace
-    if all(
-        [
-            os.getenv("DATABRICKS_SERVER_HOSTNAME"),
-            os.getenv("DATABRICKS_HTTP_PATH"),
-            os.getenv("DATABRICKS_TOKEN"),
-        ]
-    ):
-        workspaces.add("default")
-
-    # Check for prefixed workspaces
-    for key in os.environ:
-        if key.endswith("_DATABRICKS_SERVER_HOSTNAME"):
-            workspace_name = key.replace("_DATABRICKS_SERVER_HOSTNAME", "").lower()
-            workspaces.add(workspace_name)
-
-    return sorted(workspaces)
+    # Use WorkspaceConfigManager to get available workspaces
+    return _workspace_manager.get_available_workspaces()
 
 
 def count_tokens(text: str, model: str = "gpt-4") -> int:
@@ -1206,7 +1148,7 @@ async def list_and_describe_all_functions(
 
 def main():
     """Main entry point for the databricks-tools MCP server."""
-    global ROLE
+    global ROLE, _workspace_manager
 
     # Parse command-line arguments for role-based access control
     parser = argparse.ArgumentParser(description="Databricks MCP Server")
@@ -1221,6 +1163,8 @@ def main():
     # Set role based on command-line flag
     if args.developer:
         ROLE = "developer"
+        # Reinitialize workspace manager with developer role
+        _workspace_manager = WorkspaceConfigManager(role=ROLE)
 
     # Initialize and run the server
     mcp.run(transport="stdio")

@@ -6,5 +6,6 @@ validation and type safety.
 """
 
 from databricks_tools.config.models import ServerConfig, WorkspaceConfig
+from databricks_tools.config.workspace import WorkspaceConfigManager
 
-__all__ = ["WorkspaceConfig", "ServerConfig"]
+__all__ = ["WorkspaceConfig", "ServerConfig", "WorkspaceConfigManager"]
