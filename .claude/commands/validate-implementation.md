@@ -25,7 +25,7 @@ I will now delegate comprehensive validation to the user-story-finalizer agent w
 Task.invoke(
     subagent_type="user-story-finalizer",
     description="Validate implementation comprehensively",
-    prompt="""Perform comprehensive validation of the databricks-duckdb-replicator implementation.
+    prompt="""Perform comprehensive validation of the implementation.
 
     VALIDATION CHECKLIST:
 
@@ -43,7 +43,7 @@ Task.invoke(
 
     2. TEST SUITE EXECUTION:
        ✓ Run complete test suite (uv run pytest tests/ -v --tb=short)
-       ✓ Generate coverage report (uv run pytest tests/ --cov=src/databricks_duckdb_replicator --cov-report=term-missing)
+       ✓ Generate coverage report (uv run pytest tests/ --cov=src/ --cov-report=term-missing)
        ✓ Ensure coverage >85% threshold
        ✓ Check for slow tests (>1s execution)
 
@@ -60,9 +60,10 @@ Task.invoke(
 
        Test with:
        ```python
-       from databricks_duckdb_replicator import *
-       from databricks_duckdb_replicator.core import *
-       from databricks_duckdb_replicator.utils import *
+       # Import main package and submodules
+       import [package_name]
+       from [package_name].core import *
+       from [package_name].utils import *
        ```
 
     4. PERFORMANCE VALIDATION:

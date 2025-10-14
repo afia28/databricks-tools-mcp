@@ -29,7 +29,7 @@ I will now delegate performance analysis to the data-engineer agent who will:
 Task.invoke(
     subagent_type="data-engineer",
     description="Analyze and optimize performance",
-    prompt="""Perform comprehensive performance analysis for the databricks-duckdb-replicator project.
+    prompt="""Perform comprehensive performance analysis for the project.
 
     Analysis target: ${1:-entire project}
 
@@ -43,7 +43,7 @@ Task.invoke(
 
        Commands:
        - python -c "import psutil; print(f'CPU: {psutil.cpu_count()}, RAM: {psutil.virtual_memory().total/(1024**3):.1f}GB')"
-       - uv pip list | grep -E "(pandas|duckdb|pyarrow|databricks)"
+       - uv pip list | grep -E "(pandas|numpy|pyarrow|sqlalchemy)"
 
     2. CODE PERFORMANCE PROFILING:
        ✓ Analyze target module/function: ${1:-all modules}
@@ -53,10 +53,10 @@ Task.invoke(
        ✓ Analyze algorithmic complexity
 
        Focus areas:
-       - Data transfer methods (replicate_table)
-       - Optimization strategies (basic, pandas, parquet, streaming)
-       - Chunk processing logic
-       - Schema conversion operations
+       - Core processing methods and functions
+       - Optimization strategies and algorithms
+       - Batch processing logic
+       - Data transformation and processing operations
 
     3. MEMORY USAGE ANALYSIS:
        ✓ Profile memory consumption patterns
@@ -73,45 +73,45 @@ Task.invoke(
        current, peak = tracemalloc.get_traced_memory()
        ```
 
-    4. DATABASE PERFORMANCE:
-       ✓ Analyze Databricks query performance
-       ✓ Profile DuckDB operations
+    4. DATABASE/EXTERNAL SERVICE PERFORMANCE:
+       ✓ Analyze query performance
+       ✓ Profile database operations
        ✓ Check connection pooling efficiency
-       ✓ Measure bulk loading speeds
+       ✓ Measure data operation speeds
        ✓ Optimize transaction boundaries
 
        Key metrics:
-       - Rows per second throughput
+       - Operations per second throughput
        - Network latency impact
        - Disk I/O patterns
-       - Memory usage during transfers
+       - Memory usage during operations
 
-    5. OPTIMIZATION LEVEL ANALYSIS:
-       Compare performance across levels:
+    5. OPTIMIZATION STRATEGY ANALYSIS:
+       Compare performance across different strategies:
 
-       BASIC (executemany):
+       BASIC:
        - Overhead: High
        - Memory: Low
        - Speed: 2-5x baseline
-       - Best for: <100K rows
+       - Best for: Small datasets
 
-       PANDAS (DataFrame chunks):
+       OPTIMIZED:
        - Overhead: Medium
        - Memory: Medium
        - Speed: 10-50x baseline
-       - Best for: 100K-1M rows
+       - Best for: Medium datasets
 
-       PARQUET (file-based):
+       ADVANCED:
        - Overhead: Low
        - Memory: Medium
        - Speed: 50-100x baseline
-       - Best for: 1M-10M rows
+       - Best for: Large datasets
 
-       STREAMING (memory-efficient):
+       STREAMING:
        - Overhead: Medium
        - Memory: Constant
        - Speed: 50-100x baseline
-       - Best for: >10M rows or limited RAM
+       - Best for: Very large datasets or limited RAM
 
     6. BOTTLENECK IDENTIFICATION:
        ✓ Network transfer delays
@@ -123,20 +123,20 @@ Task.invoke(
 
     7. OPTIMIZATION RECOMMENDATIONS:
 
-       CHUNK SIZE TUNING:
+       BATCH SIZE TUNING:
        Based on data characteristics:
-       - Small tables (<10MB): 10,000 rows
-       - Medium tables (10MB-1GB): 100,000 rows
-       - Large tables (>1GB): 500,000-1,000,000 rows
+       - Small datasets (<10MB): 10,000 rows
+       - Medium datasets (10MB-1GB): 100,000 rows
+       - Large datasets (>1GB): 500,000-1,000,000 rows
 
        MEMORY MANAGEMENT:
        - Use generators for large datasets
        - Implement proper cleanup
-       - Configure DuckDB memory limits
+       - Configure database memory limits
        - Use connection pooling
 
        PARALLEL PROCESSING:
-       - Consider multiprocessing for multiple tables
+       - Consider multiprocessing for multiple data entities
        - Async I/O for network operations
        - Batch processing strategies
 
@@ -202,19 +202,19 @@ Task.invoke(
        ```yaml
        global:
          default_optimization_level: [recommended_level]
-         default_chunk_size: [optimal_size]
+         default_batch_size: [optimal_size]
 
        # For your data profile:
-       # - Average table size: XMB
-       # - Row count: Y
+       # - Average data size: XMB
+       # - Record count: Y
        # - Network latency: Zms
        ```
 
        🧪 BENCHMARK SUITE:
        Provide ready-to-run benchmarks:
        1. Configuration loading benchmark
-       2. Schema conversion benchmark
-       3. Data transfer benchmark
+       2. Data transformation benchmark
+       3. Data processing benchmark
        4. Memory usage benchmark
 
     IMPORTANT:
@@ -249,11 +249,11 @@ The data-engineer will provide:
 - 🧪 Test scenarios
 - 📋 Reproducible benchmarks
 
-### Database Tuning
-- 🗄️ Databricks optimizations
-- 🦆 DuckDB configurations
+### External Service Tuning
+- 🗄️ Database optimizations
 - 🔗 Connection pooling
 - 📦 Bulk loading strategies
+- ⚡ Query optimization
 
 ## Post-Analysis Actions
 
@@ -272,7 +272,7 @@ Based on the data-engineer's findings:
    - Schedule changes
 
 3. **If Configuration Tuning Needed**:
-   - Update chunk sizes
+   - Update batch sizes
    - Adjust optimization levels
    - Modify retry settings
    - Test new configuration

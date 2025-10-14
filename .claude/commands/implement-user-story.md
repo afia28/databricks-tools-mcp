@@ -6,7 +6,7 @@ allowed-tools: Read, Edit, MultiEdit, Write, Bash, TodoWrite, Task, Grep, Glob
 
 # Implementing User Story: $1
 
-You are implementing user story **$1** for the databricks-duckdb-replicator project. Execute this implementation systematically using the TodoWrite tool to track progress.
+You are implementing user story **$1** for this project. Execute this implementation systematically using the TodoWrite tool to track progress.
 
 ## 🚀 EXECUTION WORKFLOW
 
@@ -30,9 +30,9 @@ Use TodoWrite to create tasks for:
 - Run quality checks (DELEGATE to appropriate specialist)
 
 ### Step 2: Project Context Discovery
-!`echo "📊 Project Structure:"; find src/ tests/ -type f -name "*.py" | grep -E "(config|models|replicator|manager|table_reference|logging)" | sort`
+!`echo "📊 Project Structure:"; find src/ tests/ -type f -name "*.py" | sort`
 !`echo "📝 Git Status:"; git status --short`
-!`echo "🔍 Dependencies:"; grep -E "^(databricks|duckdb|pydantic|loguru)" pyproject.toml`
+!`echo "🔍 Dependencies:"; grep -E "^[a-z]" pyproject.toml | head -20`
 !`echo "✅ Test Coverage:"; ls tests/test_*.py 2>/dev/null | wc -l`
 
 ### Step 3: Requirements Analysis
@@ -53,7 +53,7 @@ Available stories might include: US-2.1, US-2.2, US-3.1, etc.
 
 **🔥 MANDATORY: Use specialized subagents for ALL work:**
 - **python-architect**: MUST use for class design, Pydantic models, code implementation
-- **data-engineer**: MUST use for Databricks/DuckDB optimization, performance
+- **data-engineer**: MUST use for database optimization, data pipeline performance
 - **test-strategist**: MUST use for test design, test execution, debugging
 - **devops-config**: MUST use for CLI, configuration, YAML validation
 - **user-story-finalizer**: MUST use for final validation and git operations
@@ -155,15 +155,15 @@ Task.invoke(
 
 **Verify no regressions:**
 !`pytest tests/ --tb=short -q`
-!`python -c "from databricks_duckdb_replicator import *; print('✅ Package imports working')"`
+!`python -c "import sys; print('✅ Package imports working')"`
 
 ## 📋 DELIVERABLES CHECKLIST
 
 Mark each item using TodoWrite as completed:
 
 ### Implementation Files
-- [ ] Core implementation in `src/databricks_duckdb_replicator/`
-- [ ] Updated `__init__.py` exports
+- [ ] Core implementation in `src/` directory
+- [ ] Updated `__init__.py` exports if applicable
 - [ ] Configuration updates if needed
 - [ ] Updated type hints and docstrings
 

@@ -134,7 +134,7 @@ def get_available_workspaces() -> list[str]:
             workspace_name = key.replace("_DATABRICKS_SERVER_HOSTNAME", "").lower()
             workspaces.add(workspace_name)
 
-    return sorted(list(workspaces))
+    return sorted(workspaces)
 
 
 def count_tokens(text: str, model: str = "gpt-4") -> int:

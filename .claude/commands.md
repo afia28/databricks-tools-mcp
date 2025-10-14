@@ -1,6 +1,6 @@
 # Project Slash Commands
 
-This directory contains custom slash commands for the databricks-duckdb-replicator project. These commands automate common development tasks and provide project-specific functionality.
+This directory contains custom slash commands for this project. These commands automate common development tasks and provide project-specific functionality.
 
 ## 📋 Complete Command Inventory
 
@@ -100,8 +100,8 @@ Total Commands: **8 slash commands** for comprehensive project automation
   - YAML syntax validation
   - Pydantic model validation
   - Environment variable presence
-  - Databricks connectivity
-  - DuckDB path accessibility
+  - External service connectivity
+  - File path accessibility
   - Configuration schema compliance
 - **Example scenarios**:
   ```bash
@@ -124,19 +124,19 @@ Total Commands: **8 slash commands** for comprehensive project automation
   - System resources (CPU, memory)
   - Code complexity and patterns
   - Memory usage during imports
-  - Database configuration
+  - External service configuration
   - Performance bottlenecks
   - Optimization opportunities
 - **Examples**:
   ```bash
   /analyze-performance                # Entire project
-  /analyze-performance core/replicator # Specific module
-  /analyze-performance replicate_table # Specific function
+  /analyze-performance core/processor # Specific module
+  /analyze-performance process_data   # Specific function
   ```
 - **Recommendations provided**:
-  - Chunk size optimization
+  - Batch size optimization
   - Memory management strategies
-  - Database tuning parameters
+  - External service tuning parameters
   - Architecture improvements
   - Profiling setup
 
@@ -324,7 +324,7 @@ When creating new commands:
 ### Integration with Subagents
 
 Commands can leverage subagents:
-- `/implement-user-story` → Uses python-architect, data-engineer
+- `/implement-user-story` → Uses python-architect, specialized domain agents
 - `/run-tests` → Can invoke test-strategist for analysis
 - `/debug-config` → May use devops-config for recommendations
 
@@ -387,4 +387,4 @@ Planned improvements:
 - Remove deprecated commands
 - Document breaking changes
 
-These commands form a comprehensive toolkit for efficient development of the databricks-duckdb-replicator project, ensuring quality, consistency, and productivity.
+These commands form a comprehensive toolkit for efficient development, ensuring quality, consistency, and productivity.

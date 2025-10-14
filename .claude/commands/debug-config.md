@@ -29,7 +29,7 @@ I will now delegate configuration debugging to the devops-config agent who will:
 Task.invoke(
     subagent_type="devops-config",
     description="Debug and fix configuration issues",
-    prompt="""Debug configuration issues for the databricks-duckdb-replicator project.
+    prompt="""Debug configuration issues for this project.
 
     Configuration file to debug: ${1:-config.yaml}
 
@@ -50,50 +50,48 @@ Task.invoke(
        Use: python -c "import yaml; yaml.safe_load(open('${1:-config.yaml}'))"
 
     3. PYDANTIC MODEL VALIDATION:
-       ✓ Load configuration through ConfigManager
+       ✓ Load configuration through appropriate config manager
        ✓ Validate against Pydantic models
        ✓ Check required fields presence
        ✓ Validate field types and constraints
-       ✓ Test enum values (optimization_level)
+       ✓ Test enum values if applicable
 
-       Use: from databricks_duckdb_replicator.core.config import ConfigManager
+       Use: from [project_module].config import ConfigManager (adjust based on project structure)
 
     4. ENVIRONMENT VARIABLES:
-       ✓ Check DATABRICKS_SERVER_HOSTNAME
-       ✓ Check DATABRICKS_HTTP_PATH
-       ✓ Check DATABRICKS_ACCESS_TOKEN
+       ✓ Check required environment variables
        ✓ Verify LOG_LEVEL if set
        ✓ Check for .env file presence
+       ✓ Validate environment variable formats
 
        Provide exact commands to set missing variables
 
     5. CONNECTIVITY VALIDATION:
-       ✓ Test Databricks configuration loading
-       ✓ Verify server hostname format
-       ✓ Check HTTP path format
-       ✓ Validate access token presence
-       ✓ Test actual connection if possible
+       ✓ Test configuration loading
+       ✓ Verify connection string formats
+       ✓ Validate credentials presence
+       ✓ Test actual connection to external services if possible
 
     6. FILE SYSTEM VALIDATION:
-       ✓ Check DuckDB path accessibility
+       ✓ Check file path accessibility
        ✓ Verify parent directory exists
        ✓ Check write permissions
-       ✓ Handle :memory: special case
+       ✓ Handle special cases (e.g., :memory:)
        ✓ Suggest path corrections if needed
 
-    7. TABLE CONFIGURATION:
-       ✓ Validate each table entry
-       ✓ Check catalog.schema.table format
-       ✓ Verify optimization levels
-       ✓ Check chunk size ranges (1000-10000000)
-       ✓ Validate enabled/disabled flags
+    7. APPLICATION CONFIGURATION:
+       ✓ Validate each configuration entry
+       ✓ Check naming conventions
+       ✓ Verify configuration values
+       ✓ Check value ranges if applicable
+       ✓ Validate feature flags and settings
 
     8. COMMON ISSUES CHECK:
-       ✓ Reserved keywords in table names
+       ✓ Reserved keywords in identifiers
        ✓ Special characters in names
-       ✓ Duplicate table definitions
+       ✓ Duplicate definitions
        ✓ Circular dependencies
-       ✓ Invalid retry configurations
+       ✓ Invalid retry/timeout configurations
 
     DIAGNOSTIC OUTPUT FORMAT:
 
@@ -135,49 +133,45 @@ Task.invoke(
 
        For missing environment variables:
        ```bash
-       export DATABRICKS_SERVER_HOSTNAME="your-workspace.cloud.databricks.com"
-       export DATABRICKS_HTTP_PATH="/sql/1.0/warehouses/your-warehouse-id"
-       export DATABRICKS_ACCESS_TOKEN="your-token"
+       export REQUIRED_ENV_VAR="your-value-here"
+       export OPTIONAL_ENV_VAR="optional-value"
+       # Add application-specific environment variables as needed
        ```
 
        For YAML syntax errors:
        ```yaml
        # Correct indentation example
        global:
-         duckdb_path: "./data.duckdb"  # 2 spaces indent
-         default_optimization_level: "pandas"
+         setting_one: "value1"  # 2 spaces indent
+         setting_two: "value2"
        ```
 
        For permission issues:
        ```bash
        chmod 644 config.yaml
-       mkdir -p $(dirname "./replicated_data.duckdb")
-       chmod 755 $(dirname "./replicated_data.duckdb")
+       mkdir -p $(dirname "./data/output.db")
+       chmod 755 $(dirname "./data/output.db")
        ```
 
     VALIDATION TESTS:
        After fixes, run these tests:
        1. Load configuration successfully
-       2. Parse all table definitions
+       2. Parse all configuration entries
        3. Validate against schema
-       4. Test connectivity (if credentials present)
+       4. Test connectivity to external services (if credentials present)
 
     SAMPLE VALID CONFIGURATION:
        Provide a minimal working example:
        ```yaml
        global:
-         duckdb_path: ":memory:"
-         default_optimization_level: "pandas"
-         default_chunk_size: 100000
          log_level: "INFO"
+         setting_one: "value1"
+         setting_two: 100000
 
-       tables:
-         - name: "sample_table"
-           source:
-             catalog: "main"
-             schema: "default"
-             table: "customers"
+       items:
+         - name: "sample_item"
            enabled: true
+           # Add application-specific fields
        ```
 
     IMPORTANT:
@@ -223,7 +217,7 @@ The devops-config agent will provide:
 Based on the devops-config agent's findings:
 
 1. **If Configuration Is Valid**:
-   - Proceed with replication
+   - Proceed with application execution
    - Note any warnings for future improvement
    - Document configuration for team
 
@@ -250,16 +244,16 @@ The devops-config agent will handle:
 - Missing required fields
 
 ### Environment Issues
-- Missing Databricks credentials
+- Missing service credentials
 - Invalid connection strings
 - Permission problems
 - Path resolution
 
 ### Configuration Issues
-- Invalid table names
+- Invalid configuration entries
 - Wrong optimization levels
-- Out-of-range chunk sizes
-- Disabled tables
+- Out-of-range parameter values
+- Disabled features
 
 ### Connectivity Issues
 - Network problems
@@ -274,9 +268,9 @@ Configuration debugging is successful when:
 - ✅ Pydantic validation passes
 - ✅ All environment variables set
 - ✅ File paths accessible
-- ✅ Databricks connection works
-- ✅ Tables properly configured
-- ✅ Ready for replication
+- ✅ External service connections work
+- ✅ Configuration entries properly validated
+- ✅ Ready for application execution
 
 ---
 **Remember**: Always delegate to devops-config. Never debug configuration directly in the main conversation.

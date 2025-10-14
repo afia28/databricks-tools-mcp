@@ -19,11 +19,15 @@ pre-commit run --all-files           # Run all pre-commit hooks
 
 # Testing
 uv run python src/databricks_tools/server.py  # Test directly
+uv run pytest tests/                           # Run all tests
+uv run pytest tests/ --cov=src/databricks_tools  # Run tests with coverage
 ```
 
 ## Project Structure
 
 - `src/databricks_tools/server.py` - Main MCP server with all 13 tools
+- `src/databricks_tools/config/models.py` - Pydantic configuration models (US-1.1)
+- `tests/test_config/test_models.py` - Configuration model tests (32 tests, 100% coverage)
 - `pyproject.toml` - Project configuration and dependencies
 - `.env` - Databricks workspace credentials (not in git)
 

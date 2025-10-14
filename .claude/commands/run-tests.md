@@ -4,7 +4,7 @@ argument-hint: [scope] (all|unit|integration|coverage|specific-file|failed)
 allowed-tools: Task, TodoWrite
 ---
 
-# Running Tests for databricks-duckdb-replicator
+# Running Tests
 
 ## 🔥 CRITICAL: MANDATORY DELEGATION
 
@@ -29,7 +29,7 @@ I will now delegate test execution to the test-strategist agent who will:
 Task.invoke(
     subagent_type="test-strategist",
     description="Execute and analyze tests",
-    prompt="""Execute tests for the databricks-duckdb-replicator project.
+    prompt="""Execute tests for the project.
 
     Test Scope: $1
 
@@ -39,7 +39,7 @@ Task.invoke(
        - 'all' or empty: Run complete test suite (uv run pytest tests/)
        - 'unit': Run unit tests only (exclude integration tests)
        - 'integration': Run integration tests only
-       - 'coverage': Run with coverage report (uv run pytest tests/ --cov=src/databricks_duckdb_replicator --cov-report=term-missing)
+       - 'coverage': Run with coverage report (uv run pytest tests/ --cov=src/ --cov-report=term-missing)
        - 'failed': Re-run only previously failed tests (uv run pytest --lf)
        - 'specific [file]': Run specific test file (e.g., tests/test_config.py)
 
@@ -133,7 +133,7 @@ Based on the test-strategist's findings:
 
 The test-strategist will execute the appropriate command:
 - `uv run pytest tests/` - All tests
-- `uv run pytest tests/ --cov=src/databricks_duckdb_replicator` - With coverage
+- `uv run pytest tests/ --cov=src/ ` - With coverage
 - `uv run pytest tests/ -k "not integration"` - Unit tests only
 - `uv run pytest tests/ -k "integration"` - Integration tests only
 - `uv run pytest --lf` - Failed tests from last run

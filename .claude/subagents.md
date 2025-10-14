@@ -1,6 +1,6 @@
 # Project Subagents
 
-This directory contains specialized subagents for the databricks-duckdb-replicator project. Each subagent has specific expertise and responsibilities to support different aspects of development.
+This directory contains specialized subagents for this project. Each subagent has specific expertise and responsibilities to support different aspects of development.
 
 ## Available Subagents
 
@@ -48,17 +48,17 @@ This directory contains specialized subagents for the databricks-duckdb-replicat
 ### 🔵 data-engineer
 - **File**: `.claude/agents/data-engineer.md`
 - **Model**: Sonnet (Color: Blue)
-- **Purpose**: Expertise in Databricks, DuckDB optimization, ETL patterns, and high-performance data transfer strategies
+- **Purpose**: Expertise in database optimization, ETL patterns, and high-performance data transfer strategies
 - **Core Expertise**:
-  - Data transfer optimization between Databricks and DuckDB
+  - Data transfer optimization between different data sources
   - Database performance tuning (connection pools, query optimization, bulk loading)
-  - Schema mapping and conversion (three-part to two-part naming)
+  - Schema mapping and conversion strategies
   - Reliability engineering (retry mechanisms, circuit breakers, error handling)
   - Performance monitoring and metrics
-  - Optimization level selection (basic, pandas, parquet, streaming)
+  - Optimization level selection and strategy
 
 - **When to use**:
-  - Optimizing data transfer between Databricks and DuckDB
+  - Optimizing data transfer between different systems
   - Designing ETL pipelines and data transformations
   - Handling schema conversions and mappings
   - Implementing retry mechanisms and error recovery
@@ -123,22 +123,22 @@ Subagents can be invoked explicitly in Claude Code:
 "Finalize and prepare US-4.2 for merge to main"
 
 # Python Architecture
-"Review the TableReference class architecture and suggest improvements"
-"Help me design Pydantic models for the replication engine with proper validation"
-"Add comprehensive type hints to the replicator module"
+"Review the DataProcessor class architecture and suggest improvements"
+"Help me design Pydantic models for the processing engine with proper validation"
+"Add comprehensive type hints to the processor module"
 
 # Data Engineering
-"Optimize the bulk loading strategy for transferring 10GB tables"
-"The three-part Databricks naming isn't mapping correctly to DuckDB's two-part naming"
-"Design an incremental replication strategy for daily updates"
+"Optimize the bulk loading strategy for transferring large datasets"
+"Design schema mapping between different data sources"
+"Design an incremental data processing strategy for daily updates"
 
 # Test Strategy
-"Create comprehensive tests for the new batch transfer function"
+"Create comprehensive tests for the new batch processing function"
 "The integration tests are failing in the CI pipeline"
 "Our configuration module only has 60% test coverage"
 
 # DevOps & Configuration
-"Design a user-friendly CLI interface for the replicator"
+"Design a user-friendly CLI interface for the application"
 "Improve the YAML configuration validation and error messages"
 "Set up production-ready logging and monitoring"
 ```
@@ -229,4 +229,4 @@ Each agent is defined with:
 - **Examples**: Specific use cases with context and expected behavior
 - **Guidelines**: Project-specific patterns and conventions to follow
 
-These subagents are project-specific and designed to support the databricks-duckdb-replicator development workflow with specialized expertise.
+These subagents are project-specific and designed to support the development workflow with specialized expertise.

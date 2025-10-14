@@ -26,7 +26,7 @@ I will now delegate linting and formatting to the python-architect agent who wil
 Task.invoke(
     subagent_type="python-architect",
     description="Perform linting and code formatting",
-    prompt="""Perform comprehensive linting and code formatting for the databricks-duckdb-replicator project.
+    prompt="""Perform comprehensive linting and code formatting for the project.
 
     LINTING AND FORMATTING TASKS:
 
