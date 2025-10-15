@@ -13,6 +13,7 @@ from databricks_tools.core.query_executor import QueryExecutor
 from databricks_tools.core.token_counter import TokenCounter
 from databricks_tools.security.role_manager import Role, RoleManager
 from databricks_tools.services.catalog_service import CatalogService
+from databricks_tools.services.function_service import FunctionService
 from databricks_tools.services.table_service import TableService
 
 # Initialize FastMCP server
@@ -39,6 +40,9 @@ _catalog_service = CatalogService(_query_executor, _token_counter, MAX_RESPONSE_
 
 # Table service instance
 _table_service = TableService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
+
+# Function service instance
+_function_service = FunctionService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
 
 # Chunking session storage (in-memory for now)
 CHUNK_SESSIONS: dict[str, dict] = {}
@@ -759,19 +763,8 @@ async def list_user_functions(
                 indent=2,
             )
 
-    # Use the helper function that sets catalog context
-    query = f"SHOW USER FUNCTIONS IN {catalog}.{schema}"
-    df = databricks_sql_query_with_catalog(catalog, query, workspace=workspace)
-
-    # Extract function names from the result
-    functions = df["function"].tolist() if "function" in df.columns else []
-
-    result = {
-        "catalog": catalog,
-        "schema": schema,
-        "user_functions": functions,
-        "function_count": len(functions),
-    }
+    # Use FunctionService to list user functions
+    result = _function_service.list_user_functions(catalog, schema, workspace)
 
     # Check token count before formatting
     temp_response = json.dumps(result, separators=(",", ":"))
@@ -785,7 +778,7 @@ async def list_user_functions(
                 "message": f"Response would be {token_count} tokens (limit: {MAX_RESPONSE_TOKENS})",
                 "catalog": catalog,
                 "schema": schema,
-                "function_count": len(functions),
+                "function_count": result.get("function_count", 0),
                 "suggestions": [
                     "Too many functions to display at once",
                     "Consider using specific function queries",
@@ -854,54 +847,10 @@ async def describe_function(
             )
 
     try:
-        # Use the helper function that sets catalog context
-        query = f"DESCRIBE FUNCTION EXTENDED {catalog}.{schema}.{function_name}"
-        df = databricks_sql_query_with_catalog(catalog, query, workspace=workspace)
-
-        # Parse the describe function extended output
-        function_info = {
-            "catalog": catalog,
-            "schema": schema,
-            "function_name": function_name,
-            "details": [],
-        }
-
-        # Process the describe extended output - each row contains info in function_desc column
-        # Filter to keep only desired fields
-        skip_configs = False
-        for _, row in df.iterrows():
-            if pd.notna(row.get("function_desc", "")):
-                desc_line = str(row["function_desc"])
-
-                # Check if we should skip this line
-                if desc_line.startswith("Configs:"):
-                    skip_configs = True
-                    continue
-                elif desc_line.startswith("Owner:") or desc_line.startswith("Create Time:"):
-                    continue
-                elif skip_configs and desc_line.startswith("               "):
-                    # Skip config lines (they are indented with many spaces)
-                    continue
-                elif desc_line.startswith("Deterministic:") or desc_line.startswith("Data Access:"):
-                    skip_configs = False  # These come after configs, so stop skipping
-
-                # Add lines we want to keep
-                if (
-                    desc_line.startswith("Function:")
-                    or desc_line.startswith("Type:")
-                    or desc_line.startswith("Input:")
-                    or desc_line.startswith("Returns:")
-                    or desc_line.startswith("Comment:")
-                    or desc_line.startswith("Deterministic:")
-                    or desc_line.startswith("Data Access:")
-                    or desc_line.startswith("Body:")
-                    or desc_line.startswith("               ")
-                ):  # Keep indented Input/Returns lines
-                    # For indented lines, only keep if we're not in config section
-                    if desc_line.startswith("               ") and not skip_configs:
-                        function_info["details"].append(desc_line)
-                    elif not desc_line.startswith("               "):
-                        function_info["details"].append(desc_line)
+        # Use FunctionService to describe function
+        function_info = _function_service.describe_function(
+            function_name, catalog, schema, workspace
+        )
 
         # Check token count before formatting
         temp_response = json.dumps(function_info, separators=(",", ":"))
@@ -983,79 +932,8 @@ async def list_and_describe_all_functions(
                 indent=2,
             )
 
-    # Use the helper function that sets catalog context
-    query = f"SHOW USER FUNCTIONS IN {catalog}.{schema}"
-    df = databricks_sql_query_with_catalog(catalog, query, workspace=workspace)
-
-    # Extract function names
-    functions = df["function"].tolist() if "function" in df.columns else []
-
-    # Initialize result structure
-    result = {
-        "catalog": catalog,
-        "schema": schema,
-        "function_count": len(functions),
-        "functions": {},
-    }
-
-    # Describe each function
-    for func in functions:
-        # Extract just the function name (remove catalog.schema prefix if present)
-        func_name = func.split(".")[-1]
-
-        try:
-            describe_query = f"DESCRIBE FUNCTION EXTENDED {catalog}.{schema}.{func_name}"
-            desc_df = databricks_sql_query_with_catalog(
-                catalog, describe_query, workspace=workspace
-            )
-
-            # Parse the describe extended output with filtering
-            function_details = []
-            skip_configs = False
-            for _, row in desc_df.iterrows():
-                if pd.notna(row.get("function_desc", "")):
-                    desc_line = str(row["function_desc"])
-
-                    # Check if we should skip this line
-                    if desc_line.startswith("Configs:"):
-                        skip_configs = True
-                        continue
-                    elif desc_line.startswith("Owner:") or desc_line.startswith("Create Time:"):
-                        continue
-                    elif skip_configs and desc_line.startswith("               "):
-                        # Skip config lines (they are indented with many spaces)
-                        continue
-                    elif desc_line.startswith("Deterministic:") or desc_line.startswith(
-                        "Data Access:"
-                    ):
-                        skip_configs = False  # These come after configs, so stop skipping
-
-                    # Add lines we want to keep
-                    if (
-                        desc_line.startswith("Function:")
-                        or desc_line.startswith("Type:")
-                        or desc_line.startswith("Input:")
-                        or desc_line.startswith("Returns:")
-                        or desc_line.startswith("Comment:")
-                        or desc_line.startswith("Deterministic:")
-                        or desc_line.startswith("Data Access:")
-                        or desc_line.startswith("Body:")
-                        or desc_line.startswith("               ")
-                    ):  # Keep indented Input/Returns lines
-                        # For indented lines, only keep if we're not in config section
-                        if desc_line.startswith("               ") and not skip_configs:
-                            function_details.append(desc_line)
-                        elif not desc_line.startswith("               "):
-                            function_details.append(desc_line)
-
-            result["functions"][func_name] = function_details
-
-        except Exception as e:
-            # If we can't describe a function, include error info
-            result["functions"][func_name] = {
-                "error": "Could not describe function",
-                "message": str(e),
-            }
+    # Use FunctionService to list and describe all functions
+    result = _function_service.list_and_describe_all_functions(catalog, schema, workspace)
 
     # Check token count before formatting final response
     temp_response = json.dumps(result, separators=(",", ":"))
@@ -1073,7 +951,13 @@ async def list_and_describe_all_functions(
 
 def main():
     """Main entry point for the databricks-tools MCP server."""
-    global _role_manager, _workspace_manager, _query_executor, _catalog_service, _table_service
+    global \
+        _role_manager, \
+        _workspace_manager, \
+        _query_executor, \
+        _catalog_service, \
+        _table_service, \
+        _function_service
 
     # Parse command-line arguments for role-based access control
     parser = argparse.ArgumentParser(description="Databricks MCP Server")
@@ -1085,7 +969,7 @@ def main():
 
     args = parser.parse_args()
 
-    # AIDEV-NOTE: Update role manager, workspace manager, query executor, catalog service, and table service if developer mode enabled
+    # AIDEV-NOTE: Update role manager, workspace manager, query executor, catalog service, table service, and function service if developer mode enabled
     if args.developer:
         _role_manager = RoleManager(role=Role.DEVELOPER)
         # Reinitialize workspace manager with developer role manager
@@ -1096,6 +980,8 @@ def main():
         _catalog_service = CatalogService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
         # Reinitialize table service with updated query executor
         _table_service = TableService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
+        # Reinitialize function service with updated query executor
+        _function_service = FunctionService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
 
     # Initialize and run the server
     mcp.run(transport="stdio")
