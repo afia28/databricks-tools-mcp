@@ -28,9 +28,11 @@ uv run pytest tests/ --cov=src/databricks_tools  # Run tests with coverage
 - `src/databricks_tools/server.py` - Main MCP server with all 13 tools
 - `src/databricks_tools/config/models.py` - Pydantic configuration models (US-1.1)
 - `src/databricks_tools/config/workspace.py` - Workspace configuration manager (US-1.2)
+- `src/databricks_tools/core/token_counter.py` - Token counting utility with caching (US-2.1)
 - `src/databricks_tools/security/role_manager.py` - Role-based access control manager (US-1.3)
 - `tests/test_config/test_models.py` - Configuration model tests (32 tests, 100% coverage)
 - `tests/test_config/test_workspace.py` - Workspace manager tests (14 tests, 94% coverage)
+- `tests/test_core/test_token_counter.py` - Token counter tests (28 tests, 100% coverage)
 - `tests/test_security/test_role_manager.py` - Role manager tests (21 tests, 92% coverage)
 - `pyproject.toml` - Project configuration and dependencies
 - `.env` - Databricks workspace credentials (not in git)
@@ -129,4 +131,15 @@ For incremental improvements:
 - Integrated with WorkspaceConfigManager (backward compatible)
 - Updated server.py to use RoleManager instead of string-based roles
 - 21 tests, 92% coverage
-- Total tests: 67 tests, all passing
+
+**US-2.1: Token Counter Utility** - Completed
+- Created TokenCounter class in core package for token counting with caching
+- Implemented count_tokens method for text strings
+- Implemented estimate_tokens method for JSON/dict objects
+- Implemented estimate_response_tokens method with formatting options
+- Used @lru_cache decorator for encoding caching (maxsize=4)
+- Supports multiple models (gpt-4, gpt-3.5-turbo, cl100k_base, etc.)
+- Graceful fallback to cl100k_base for unknown models
+- Wrapper functions in server.py maintain backward compatibility
+- 28 tests, 100% coverage
+- Total tests: 95 tests, all passing

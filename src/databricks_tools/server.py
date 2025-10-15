@@ -5,12 +5,12 @@ import uuid
 from datetime import datetime
 
 import pandas as pd
-import tiktoken
 from databricks import sql
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 from databricks_tools.config.workspace import WorkspaceConfigManager
+from databricks_tools.core.token_counter import TokenCounter
 from databricks_tools.security.role_manager import Role, RoleManager
 
 # Initialize FastMCP server
@@ -22,6 +22,9 @@ _role_manager = RoleManager(role=Role.ANALYST)
 
 # Workspace configuration manager instance (initialized with role_manager)
 _workspace_manager = WorkspaceConfigManager(role_manager=_role_manager)
+
+# Token counting utility instance
+_token_counter = TokenCounter(model="gpt-4")
 
 # Token limit constant
 MAX_RESPONSE_TOKENS = 9000  # MCP server limit is 25,000, keep 1,000 token buffer
@@ -81,46 +84,43 @@ def get_available_workspaces() -> list[str]:
 
 
 def count_tokens(text: str, model: str = "gpt-4") -> int:
-    """
-    Count the number of tokens in a text string using tiktoken.
+    """Count tokens in text using TokenCounter utility.
 
-    Parameters:
-    ----------
-    text : str
-        The text to count tokens for.
-    model : str, optional
-        The model to use for token counting. Default is "gpt-4".
+    Legacy wrapper function for backward compatibility with existing code.
+
+    Args:
+        text: The text to count tokens in.
+        model: The model to use for counting (default "gpt-4").
 
     Returns:
-    -------
-    int
         The number of tokens in the text.
+
+    Example:
+        >>> count_tokens("Hello, world!")
+        4
     """
-    try:
-        encoding = tiktoken.encoding_for_model(model)
-        return len(encoding.encode(text))
-    except (KeyError, ValueError):
-        # Fallback to cl100k_base encoding if model not found
-        encoding = tiktoken.get_encoding("cl100k_base")
-        return len(encoding.encode(text))
+    if model != "gpt-4":
+        counter = TokenCounter(model=model)
+        return counter.count_tokens(text)
+    return _token_counter.count_tokens(text)
 
 
 def estimate_response_tokens(data: dict) -> int:
-    """
-    Estimate the number of tokens in a response dictionary.
+    """Estimate tokens in a response dict using TokenCounter utility.
 
-    Parameters:
-    ----------
-    data : Dict
-        The response data dictionary to estimate tokens for.
+    Legacy wrapper function for backward compatibility with existing code.
+
+    Args:
+        data: The dictionary to estimate tokens for.
 
     Returns:
-    -------
-    int
-        Estimated number of tokens in the JSON response.
+        The estimated number of tokens.
+
+    Example:
+        >>> estimate_response_tokens({"key": "value"})
+        7
     """
-    json_string = json.dumps(data, separators=(",", ":"))
-    return count_tokens(json_string)
+    return _token_counter.estimate_tokens(data)
 
 
 def create_chunked_response(data: dict, max_tokens: int = MAX_RESPONSE_TOKENS) -> dict:
