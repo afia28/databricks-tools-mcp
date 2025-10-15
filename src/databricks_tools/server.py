@@ -12,6 +12,7 @@ from databricks_tools.config.workspace import WorkspaceConfigManager
 from databricks_tools.core.query_executor import QueryExecutor
 from databricks_tools.core.token_counter import TokenCounter
 from databricks_tools.security.role_manager import Role, RoleManager
+from databricks_tools.services.catalog_service import CatalogService
 
 # Initialize FastMCP server
 load_dotenv()
@@ -31,6 +32,9 @@ _token_counter = TokenCounter(model="gpt-4")
 
 # Token limit constant
 MAX_RESPONSE_TOKENS = 9000  # MCP server limit is 25,000, keep 1,000 token buffer
+
+# Catalog service instance
+_catalog_service = CatalogService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
 
 # Chunking session storage (in-memory for now)
 CHUNK_SESSIONS: dict[str, dict] = {}
@@ -545,6 +549,10 @@ async def list_catalogs(workspace: str | None = None) -> str:
     """
     Lists all catalogs available in the specified Databricks workspace.
 
+    Role-based behavior:
+    - ANALYST mode: Only accesses default workspace.
+    - DEVELOPER mode: Can access any configured workspace.
+
     Parameters:
     ----------
     workspace : str, optional
@@ -556,44 +564,38 @@ async def list_catalogs(workspace: str | None = None) -> str:
     -------
     str
         A JSON-formatted list of catalog names.
+
+    Example:
+        >>> result = await list_catalogs()
+        >>> print(result)
+        ["main", "analytics", "prod"]
     """
-    query = "SHOW CATALOGS"
-    df = databricks_sql_query(query, workspace=workspace)
-    catalogs = df["catalog"].tolist()
+    try:
+        # Use CatalogService to get catalogs
+        catalogs = _catalog_service.list_catalogs(workspace)
 
-    # Check token count before formatting
-    temp_response = json.dumps(catalogs, separators=(",", ":"))
-    token_count = count_tokens(temp_response)
+        # Return as JSON
+        return json.dumps(catalogs, indent=2)
 
-    if token_count > MAX_RESPONSE_TOKENS:
-        # Return error with guidance
-        error_response = json.dumps(
-            {
-                "error": "Response too large",
-                "message": f"Response would be {token_count} tokens (limit: {MAX_RESPONSE_TOKENS})",
-                "catalogs_count": len(catalogs),
-                "suggestions": [
-                    "Too many catalogs to display at once",
-                    "Consider filtering catalogs programmatically",
-                ],
-            },
-            indent=2,
-        )
-        return "\n---\n".join([error_response])
-
-    result = json.dumps(catalogs, indent=2)
-    return "\n---\n".join([result])
+    except Exception as e:
+        error_msg = f"Error listing catalogs: {str(e)}"
+        return json.dumps({"error": error_msg})
 
 
 @mcp.tool()
-async def list_schemas(catalogs: list, workspace: str | None = None) -> str:
+async def list_schemas(
+    catalogs: str | list[str] | None = None, workspace: str | None = None
+) -> str:
     """
-    Lists schemas for a given catalog or list of catalogs.
+    Lists schemas for specified catalogs.
 
     Parameters:
     ----------
-    catalogs : list
-        A list of catalog names.
+    catalogs : str | list[str] | None
+        Catalog name(s) to query. Can be:
+        - Single catalog name (str)
+        - List of catalog names
+        - None (queries all catalogs)
     workspace : str, optional
         The workspace name to connect to.
         - In ANALYST mode: This parameter is ignored, always uses default workspace.
@@ -603,35 +605,31 @@ async def list_schemas(catalogs: list, workspace: str | None = None) -> str:
     -------
     str
         A JSON-formatted dictionary with catalog names as keys and lists of schema names as values.
+
+    Example:
+        >>> result = await list_schemas(catalogs=["main"])
+        >>> print(result)
+        {"main": ["default", "staging"]}
     """
-    result = {}
-    for catalog in catalogs:
-        query = f"SHOW SCHEMAS IN {catalog}"
-        df = databricks_sql_query(query, workspace=workspace)
-        result[catalog] = df["databaseName"].tolist()
+    try:
+        # Handle catalogs parameter
+        if catalogs is None:
+            # Get all catalogs first
+            catalog_list = _catalog_service.list_catalogs(workspace)
+        elif isinstance(catalogs, str):
+            catalog_list = [catalogs]
+        else:
+            catalog_list = catalogs
 
-    # Check token count before formatting
-    temp_response = json.dumps(result, separators=(",", ":"))
-    token_count = count_tokens(temp_response)
+        # Use CatalogService to get schemas
+        result = _catalog_service.list_schemas(catalog_list, workspace)
 
-    if token_count > MAX_RESPONSE_TOKENS:
-        # Return error with guidance
-        error_response = json.dumps(
-            {
-                "error": "Response too large",
-                "message": f"Response would be {token_count} tokens (limit: {MAX_RESPONSE_TOKENS})",
-                "catalogs_requested": len(catalogs),
-                "suggestions": [
-                    "Request fewer catalogs at once",
-                    f"Split the {len(catalogs)} catalogs into smaller batches",
-                ],
-            },
-            indent=2,
-        )
-        return "\n---\n".join([error_response])
+        # Return as JSON
+        return json.dumps(result, indent=2)
 
-    result = json.dumps(result, indent=2)
-    return "\n---\n".join([result])
+    except Exception as e:
+        error_msg = f"Error listing schemas: {str(e)}"
+        return json.dumps({"error": error_msg})
 
 
 @mcp.tool()
@@ -1128,7 +1126,7 @@ async def list_and_describe_all_functions(
 
 def main():
     """Main entry point for the databricks-tools MCP server."""
-    global _role_manager, _workspace_manager, _query_executor
+    global _role_manager, _workspace_manager, _query_executor, _catalog_service
 
     # Parse command-line arguments for role-based access control
     parser = argparse.ArgumentParser(description="Databricks MCP Server")
@@ -1140,13 +1138,17 @@ def main():
 
     args = parser.parse_args()
 
-    # AIDEV-NOTE: Update role manager, workspace manager, and query executor if developer mode enabled
+    # AIDEV-NOTE: Update role manager, workspace manager, query executor, and catalog service if developer mode enabled
     if args.developer:
         _role_manager = RoleManager(role=Role.DEVELOPER)
         # Reinitialize workspace manager with developer role manager
         _workspace_manager = WorkspaceConfigManager(role_manager=_role_manager)
         # Reinitialize query executor with updated workspace manager
         _query_executor = QueryExecutor(_workspace_manager)
+        # Reinitialize catalog service with updated query executor
+        _catalog_service = CatalogService(
+            _query_executor, _token_counter, MAX_RESPONSE_TOKENS
+        )
 
     # Initialize and run the server
     mcp.run(transport="stdio")
