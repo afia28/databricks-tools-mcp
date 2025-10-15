@@ -64,9 +64,7 @@ def clean_env(monkeypatch: pytest.MonkeyPatch):
 class TestWorkspaceConfig:
     """Tests for WorkspaceConfig Pydantic model."""
 
-    def test_workspace_config_valid_creation(
-        self, valid_workspace_data: dict[str, Any]
-    ):
+    def test_workspace_config_valid_creation(self, valid_workspace_data: dict[str, Any]):
         """Test creating a valid WorkspaceConfig with all required fields.
 
         This test validates that a WorkspaceConfig can be created with valid
@@ -76,10 +74,7 @@ class TestWorkspaceConfig:
 
         assert config.server_hostname == valid_workspace_data["server_hostname"]
         assert config.http_path == valid_workspace_data["http_path"]
-        assert (
-            config.access_token.get_secret_value()
-            == valid_workspace_data["access_token"]
-        )
+        assert config.access_token.get_secret_value() == valid_workspace_data["access_token"]
         assert config.workspace_name == valid_workspace_data["workspace_name"]
 
     def test_workspace_config_invalid_hostname(self):
@@ -204,9 +199,7 @@ class TestWorkspaceConfig:
         The from_env() method should read DATABRICKS_* variables for the default workspace.
         """
         # Set environment variables
-        clean_env.setenv(
-            "DATABRICKS_SERVER_HOSTNAME", "https://env-workspace.databricks.com"
-        )
+        clean_env.setenv("DATABRICKS_SERVER_HOSTNAME", "https://env-workspace.databricks.com")
         clean_env.setenv("DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/env123")
         clean_env.setenv("DATABRICKS_TOKEN", "dapi_env_token_1234567890abcdef")
 
@@ -215,9 +208,7 @@ class TestWorkspaceConfig:
 
         assert config.server_hostname == "https://env-workspace.databricks.com"
         assert config.http_path == "/sql/1.0/warehouses/env123"
-        assert (
-            config.access_token.get_secret_value() == "dapi_env_token_1234567890abcdef"
-        )
+        assert config.access_token.get_secret_value() == "dapi_env_token_1234567890abcdef"
         assert config.workspace_name == "default"
 
     def test_workspace_config_from_env_with_prefix(self, clean_env: pytest.MonkeyPatch):
@@ -231,21 +222,15 @@ class TestWorkspaceConfig:
             "PRODUCTION_DATABRICKS_SERVER_HOSTNAME",
             "https://production.databricks.com",
         )
-        clean_env.setenv(
-            "PRODUCTION_DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/prod123"
-        )
-        clean_env.setenv(
-            "PRODUCTION_DATABRICKS_TOKEN", "dapi_prod_token_1234567890abcdef"
-        )
+        clean_env.setenv("PRODUCTION_DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/prod123")
+        clean_env.setenv("PRODUCTION_DATABRICKS_TOKEN", "dapi_prod_token_1234567890abcdef")
 
         # Create config from environment with prefix
         config = WorkspaceConfig.from_env(prefix="PRODUCTION")
 
         assert config.server_hostname == "https://production.databricks.com"
         assert config.http_path == "/sql/1.0/warehouses/prod123"
-        assert (
-            config.access_token.get_secret_value() == "dapi_prod_token_1234567890abcdef"
-        )
+        assert config.access_token.get_secret_value() == "dapi_prod_token_1234567890abcdef"
         assert config.workspace_name == "production"
 
     def test_workspace_config_from_env_with_trailing_underscore(
@@ -260,9 +245,7 @@ class TestWorkspaceConfig:
             "STAGING_DATABRICKS_SERVER_HOSTNAME",
             "https://staging.databricks.com",
         )
-        clean_env.setenv(
-            "STAGING_DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/staging123"
-        )
+        clean_env.setenv("STAGING_DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/staging123")
         clean_env.setenv("STAGING_DATABRICKS_TOKEN", "dapi_staging_token_1234567890ab")
 
         # Create config with trailing underscore in prefix
@@ -271,9 +254,7 @@ class TestWorkspaceConfig:
         assert config.server_hostname == "https://staging.databricks.com"
         assert config.workspace_name == "staging"
 
-    def test_workspace_config_from_env_missing_variables(
-        self, clean_env: pytest.MonkeyPatch
-    ):
+    def test_workspace_config_from_env_missing_variables(self, clean_env: pytest.MonkeyPatch):
         """Test that from_env() raises ValueError when required env vars are missing.
 
         Missing environment variables should result in a clear error message.
@@ -289,9 +270,7 @@ class TestWorkspaceConfig:
         assert "DATABRICKS_HTTP_PATH" in error_msg
         assert "DATABRICKS_TOKEN" in error_msg
 
-    def test_workspace_config_from_env_partial_variables(
-        self, clean_env: pytest.MonkeyPatch
-    ):
+    def test_workspace_config_from_env_partial_variables(self, clean_env: pytest.MonkeyPatch):
         """Test that from_env() raises ValueError when only some env vars are set.
 
         All three required variables must be present.
@@ -321,9 +300,7 @@ class TestWorkspaceConfig:
         error_msg = str(exc_info.value)
         assert "frozen" in error_msg.lower() or "immutable" in error_msg.lower()
 
-    def test_workspace_config_token_not_in_repr(
-        self, valid_workspace_data: dict[str, Any]
-    ):
+    def test_workspace_config_token_not_in_repr(self, valid_workspace_data: dict[str, Any]):
         """Test that access_token value is not exposed in repr() or str().
 
         For security, the token value should be hidden when printing the config object.
@@ -358,9 +335,7 @@ class TestWorkspaceConfig:
         # Whitespace should be stripped
         assert config.server_hostname == "https://whitespace.databricks.com"
         assert config.http_path == "/sql/1.0/warehouses/abc123"
-        assert (
-            config.access_token.get_secret_value() == "dapi1234567890abcdef1234567890ab"
-        )
+        assert config.access_token.get_secret_value() == "dapi1234567890abcdef1234567890ab"
         assert config.workspace_name == "production"
 
     def test_workspace_config_whitespace_only_hostname(self):
@@ -520,9 +495,7 @@ class TestServerConfig:
         restored_config = ServerConfig.model_validate_json(json_str)
 
         # Verify values match
-        assert (
-            restored_config.max_response_tokens == original_config.max_response_tokens
-        )
+        assert restored_config.max_response_tokens == original_config.max_response_tokens
         assert restored_config.default_catalog == original_config.default_catalog
         assert restored_config.default_schema == original_config.default_schema
 
@@ -574,9 +547,7 @@ class TestServerConfig:
 
         This tests the validator method directly to ensure defensive code works.
         """
-        with pytest.raises(
-            ValueError, match="max_response_tokens must be at least 1000"
-        ):
+        with pytest.raises(ValueError, match="max_response_tokens must be at least 1000"):
             ServerConfig.validate_max_response_tokens(500)
 
     def test_server_config_validator_too_high(self):

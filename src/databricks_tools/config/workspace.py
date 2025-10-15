@@ -174,9 +174,7 @@ class WorkspaceConfigManager:
 
             # AIDEV-NOTE: In developer mode, try to fall back to default workspace
             if self.role_manager.role == Role.DEVELOPER:
-                logger.warning(
-                    f"Workspace '{workspace}' not found, using default workspace"
-                )
+                logger.warning(f"Workspace '{workspace}' not found, using default workspace")
                 default_config = self._load_workspace_from_env(prefix="")
                 if default_config is not None:
                     return default_config

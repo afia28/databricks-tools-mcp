@@ -13,6 +13,7 @@ from databricks_tools.core.query_executor import QueryExecutor
 from databricks_tools.core.token_counter import TokenCounter
 from databricks_tools.security.role_manager import Role, RoleManager
 from databricks_tools.services.catalog_service import CatalogService
+from databricks_tools.services.table_service import TableService
 
 # Initialize FastMCP server
 load_dotenv()
@@ -35,6 +36,9 @@ MAX_RESPONSE_TOKENS = 9000  # MCP server limit is 25,000, keep 1,000 token buffe
 
 # Catalog service instance
 _catalog_service = CatalogService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
+
+# Table service instance
+_table_service = TableService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
 
 # Chunking session storage (in-memory for now)
 CHUNK_SESSIONS: dict[str, dict] = {}
@@ -159,9 +163,7 @@ def create_chunked_response(data: dict, max_tokens: int = MAX_RESPONSE_TOKENS) -
 
     # Calculate how many rows can fit in each chunk
     base_tokens = estimate_response_tokens(base_response)
-    available_tokens = (
-        max_tokens - base_tokens - 500
-    )  # Reserve 500 tokens for chunk metadata
+    available_tokens = max_tokens - base_tokens - 500  # Reserve 500 tokens for chunk metadata
 
     # Estimate tokens per row (using first few rows as sample)
     if rows:
@@ -376,8 +378,7 @@ async def get_chunking_session_info(session_id: str) -> str:
             "chunks_delivered": session["chunks_delivered"],
             "chunks_remaining": session["total_chunks"] - session["chunks_delivered"],
             "created_at": session["created_at"].isoformat(),
-            "all_chunks_delivered": session["chunks_delivered"]
-            >= session["total_chunks"],
+            "all_chunks_delivered": session["chunks_delivered"] >= session["total_chunks"],
             "next_chunk_to_request": (
                 min(session["chunks_delivered"] + 1, session["total_chunks"])
                 if session["chunks_delivered"] < session["total_chunks"]
@@ -419,22 +420,8 @@ async def get_table_row_count(
     str
         A JSON-formatted string containing the row count and estimated pages for different page sizes.
     """
-    query = f"SELECT COUNT(*) as row_count FROM {catalog}.{schema}.{table_name}"
-    df = databricks_sql_query(query, workspace=workspace)
-
-    row_count = int(df.iloc[0]["row_count"])
-
-    # Calculate estimated pages for common page sizes
-    page_sizes = [50, 100, 250, 500, 1000]
-    pages_info = {}
-    for size in page_sizes:
-        pages_info[f"pages_with_{size}_rows"] = (row_count + size - 1) // size
-
-    result = {
-        "table_name": f"{catalog}.{schema}.{table_name}",
-        "total_rows": row_count,
-        "estimated_pages": pages_info,
-    }
+    # Use TableService to get row count
+    result = _table_service.get_table_row_count(catalog, schema, table_name, workspace)
 
     return json.dumps(result, indent=2, separators=(",", ":"))
 
@@ -471,21 +458,8 @@ async def get_table_details(
         A JSON-formatted string containing the table name, schema, and data.
         If response exceeds token limits, returns chunked response information.
     """
-    # Build query with optional limit
-    if limit is not None:
-        query = f"SELECT * FROM {catalog}.{schema}.{table_name} LIMIT {limit}"
-    else:
-        query = f"SELECT * FROM {catalog}.{schema}.{table_name}"
-
-    df = databricks_sql_query(query, workspace=workspace)
-
-    # Convert DataFrame to result format and add table information
-    df_json = json.loads(df.to_json(orient="table", index=False))
-    result = {
-        "data": df_json["data"],
-        "schema": df_json["schema"],
-        "table_name": f"{catalog}.{schema}.{table_name}",
-    }
+    # Use TableService to get table details
+    result = _table_service.get_table_details(catalog, schema, table_name, limit, workspace)
 
     # Check token count before formatting final response
     temp_response = json.dumps(result, separators=(",", ":"))
@@ -653,11 +627,8 @@ async def list_tables(catalog: str, schemas: list, workspace: str | None = None)
     str
         A JSON-formatted dictionary with schema names as keys and lists of table names as values.
     """
-    result = {}
-    for schema in schemas:
-        query = f"SHOW TABLES IN {catalog}.{schema}"
-        df = databricks_sql_query(query, workspace=workspace)
-        result[schema] = df["tableName"].tolist()
+    # Use TableService to list tables
+    result = _table_service.list_tables(catalog, schemas, workspace)
 
     # Check token count before formatting
     temp_response = json.dumps(result, separators=(",", ":"))
@@ -710,22 +681,8 @@ async def list_columns(
         A JSON-formatted dictionary where each key is a table name and the value is a list of dictionaries
         with column metadata (name, type, and description).
     """
-    result = {}
-    for table in tables:
-        query = f"DESCRIBE TABLE EXTENDED {catalog}.{schema}.{table}"
-        df = databricks_sql_query(query, workspace=workspace)
-        # Filter to only the schema description section
-        metadata = []
-        for _, row in df.iterrows():
-            if row["col_name"] and not row["col_name"].startswith("#"):
-                metadata.append(
-                    {
-                        "name": row["col_name"],
-                        "type": row["data_type"],
-                        "description": row.get("comment", ""),
-                    }
-                )
-        result[table] = metadata
+    # Use TableService to list columns
+    result = _table_service.list_columns(catalog, schema, tables, workspace)
 
     # Check token count before formatting
     temp_response = json.dumps(result, separators=(",", ":"))
@@ -920,16 +877,12 @@ async def describe_function(
                 if desc_line.startswith("Configs:"):
                     skip_configs = True
                     continue
-                elif desc_line.startswith("Owner:") or desc_line.startswith(
-                    "Create Time:"
-                ):
+                elif desc_line.startswith("Owner:") or desc_line.startswith("Create Time:"):
                     continue
                 elif skip_configs and desc_line.startswith("               "):
                     # Skip config lines (they are indented with many spaces)
                     continue
-                elif desc_line.startswith("Deterministic:") or desc_line.startswith(
-                    "Data Access:"
-                ):
+                elif desc_line.startswith("Deterministic:") or desc_line.startswith("Data Access:"):
                     skip_configs = False  # These come after configs, so stop skipping
 
                 # Add lines we want to keep
@@ -1051,9 +1004,7 @@ async def list_and_describe_all_functions(
         func_name = func.split(".")[-1]
 
         try:
-            describe_query = (
-                f"DESCRIBE FUNCTION EXTENDED {catalog}.{schema}.{func_name}"
-            )
+            describe_query = f"DESCRIBE FUNCTION EXTENDED {catalog}.{schema}.{func_name}"
             desc_df = databricks_sql_query_with_catalog(
                 catalog, describe_query, workspace=workspace
             )
@@ -1069,9 +1020,7 @@ async def list_and_describe_all_functions(
                     if desc_line.startswith("Configs:"):
                         skip_configs = True
                         continue
-                    elif desc_line.startswith("Owner:") or desc_line.startswith(
-                        "Create Time:"
-                    ):
+                    elif desc_line.startswith("Owner:") or desc_line.startswith("Create Time:"):
                         continue
                     elif skip_configs and desc_line.startswith("               "):
                         # Skip config lines (they are indented with many spaces)
@@ -1079,9 +1028,7 @@ async def list_and_describe_all_functions(
                     elif desc_line.startswith("Deterministic:") or desc_line.startswith(
                         "Data Access:"
                     ):
-                        skip_configs = (
-                            False  # These come after configs, so stop skipping
-                        )
+                        skip_configs = False  # These come after configs, so stop skipping
 
                     # Add lines we want to keep
                     if (
@@ -1126,7 +1073,7 @@ async def list_and_describe_all_functions(
 
 def main():
     """Main entry point for the databricks-tools MCP server."""
-    global _role_manager, _workspace_manager, _query_executor, _catalog_service
+    global _role_manager, _workspace_manager, _query_executor, _catalog_service, _table_service
 
     # Parse command-line arguments for role-based access control
     parser = argparse.ArgumentParser(description="Databricks MCP Server")
@@ -1138,7 +1085,7 @@ def main():
 
     args = parser.parse_args()
 
-    # AIDEV-NOTE: Update role manager, workspace manager, query executor, and catalog service if developer mode enabled
+    # AIDEV-NOTE: Update role manager, workspace manager, query executor, catalog service, and table service if developer mode enabled
     if args.developer:
         _role_manager = RoleManager(role=Role.DEVELOPER)
         # Reinitialize workspace manager with developer role manager
@@ -1146,9 +1093,9 @@ def main():
         # Reinitialize query executor with updated workspace manager
         _query_executor = QueryExecutor(_workspace_manager)
         # Reinitialize catalog service with updated query executor
-        _catalog_service = CatalogService(
-            _query_executor, _token_counter, MAX_RESPONSE_TOKENS
-        )
+        _catalog_service = CatalogService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
+        # Reinitialize table service with updated query executor
+        _table_service = TableService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
 
     # Initialize and run the server
     mcp.run(transport="stdio")

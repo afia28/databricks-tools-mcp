@@ -113,9 +113,7 @@ class TestTokenCounterInitialization:
         assert default_counter._encoding is not None
         assert isinstance(default_counter._encoding, tiktoken.Encoding)
 
-    def test_token_counter_custom_model_initialization(
-        self, gpt35_counter: TokenCounter
-    ):
+    def test_token_counter_custom_model_initialization(self, gpt35_counter: TokenCounter):
         """Test TokenCounter initializes with custom model.
 
         TokenCounter should accept custom model names like 'gpt-3.5-turbo'
@@ -166,9 +164,7 @@ class TestTokenCounting:
 
         assert token_count == 0
 
-    def test_count_tokens_long_text(
-        self, default_counter: TokenCounter, long_text: str
-    ):
+    def test_count_tokens_long_text(self, default_counter: TokenCounter, long_text: str):
         """Test token counting for long text (approximately 1000 words).
 
         For 1000 words, we expect approximately 750-1500 tokens

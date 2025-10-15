@@ -5,5 +5,6 @@ including catalog operations, table operations, and query utilities.
 """
 
 from databricks_tools.services.catalog_service import CatalogService
+from databricks_tools.services.table_service import TableService
 
-__all__ = ["CatalogService"]
+__all__ = ["CatalogService", "TableService"]

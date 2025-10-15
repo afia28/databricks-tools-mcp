@@ -163,9 +163,7 @@ class TestCatalogServiceInitialization:
         This is test case 2 from US-3.1 requirements.
         """
         # Act
-        service = CatalogService(
-            mock_query_executor, mock_token_counter, max_tokens=5000
-        )
+        service = CatalogService(mock_query_executor, mock_token_counter, max_tokens=5000)
 
         # Assert
         assert service.query_executor is mock_query_executor
@@ -231,9 +229,7 @@ class TestCatalogServiceListCatalogs:
         # Assert
         assert isinstance(result, list)
         assert result == ["main", "analytics", "production"]
-        mock_query_executor.execute_query.assert_called_once_with(
-            "SHOW CATALOGS", "production"
-        )
+        mock_query_executor.execute_query.assert_called_once_with("SHOW CATALOGS", "production")
 
     def test_list_catalogs_empty_result(
         self,
@@ -321,9 +317,7 @@ class TestCatalogServiceListSchemas:
         assert isinstance(result, dict)
         assert "main" in result
         assert result["main"] == ["default", "staging", "development"]
-        mock_query_executor.execute_query.assert_called_once_with(
-            "SHOW SCHEMAS IN main", None
-        )
+        mock_query_executor.execute_query.assert_called_once_with("SHOW SCHEMAS IN main", None)
 
     def test_list_schemas_multiple_catalogs(
         self,
@@ -435,9 +429,7 @@ class TestCatalogServiceListSchemas:
         ]
 
         # Act
-        result = catalog_service.list_schemas(
-            ["main", "analytics"], workspace="test_workspace"
-        )
+        result = catalog_service.list_schemas(["main", "analytics"], workspace="test_workspace")
 
         # Assert
         assert len(result) == 2
@@ -522,9 +514,7 @@ class TestCatalogServiceErrorHandling:
         )
 
         # Act & Assert
-        with pytest.raises(
-            DatabricksError, match="Catalog 'invalid_catalog' not found"
-        ):
+        with pytest.raises(DatabricksError, match="Catalog 'invalid_catalog' not found"):
             catalog_service.list_schemas(["invalid_catalog"])
 
     def test_list_catalogs_workspace_not_found(
@@ -544,9 +534,7 @@ class TestCatalogServiceErrorHandling:
         )
 
         # Act & Assert
-        with pytest.raises(
-            ValueError, match="Workspace 'nonexistent' configuration not found"
-        ):
+        with pytest.raises(ValueError, match="Workspace 'nonexistent' configuration not found"):
             catalog_service.list_catalogs(workspace="nonexistent")
 
     def test_list_schemas_workspace_not_found(
@@ -566,9 +554,7 @@ class TestCatalogServiceErrorHandling:
         )
 
         # Act & Assert
-        with pytest.raises(
-            ValueError, match="Workspace 'nonexistent' configuration not found"
-        ):
+        with pytest.raises(ValueError, match="Workspace 'nonexistent' configuration not found"):
             catalog_service.list_schemas(["main"], workspace="nonexistent")
 
 
@@ -832,9 +818,7 @@ class TestCatalogServiceEdgeCases:
 
         # Assert
         assert result["main"] == ["default", "staging", "development"]
-        mock_query_executor.execute_query.assert_called_once_with(
-            "SHOW SCHEMAS IN main", None
-        )
+        mock_query_executor.execute_query.assert_called_once_with("SHOW SCHEMAS IN main", None)
 
     def test_list_schemas_preserves_order(
         self,

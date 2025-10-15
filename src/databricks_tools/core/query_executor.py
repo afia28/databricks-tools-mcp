@@ -159,11 +159,7 @@ class QueryExecutor:
 
                 # Fetch results
                 result = cursor.fetchall()
-                columns = (
-                    [desc[0] for desc in cursor.description]
-                    if cursor.description
-                    else []
-                )
+                columns = [desc[0] for desc in cursor.description] if cursor.description else []
                 df = pd.DataFrame(result, columns=columns)
 
             finally:
