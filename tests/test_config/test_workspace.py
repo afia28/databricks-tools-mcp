@@ -135,7 +135,9 @@ class TestWorkspaceConfigManager:
 
     # ==================== Error Handling Tests ====================
 
-    def test_workspace_manager_no_default_configured(self, clean_env: pytest.MonkeyPatch):
+    def test_workspace_manager_no_default_configured(
+        self, clean_env: pytest.MonkeyPatch
+    ):
         """Test ValueError raised when no default workspace is configured.
 
         When trying to access configuration without a default workspace set up,
@@ -147,8 +149,12 @@ class TestWorkspaceConfigManager:
             clean_env: Fixture providing clean environment without Databricks configs.
         """
         # Set up only production workspace, no default
-        clean_env.setenv("PRODUCTION_DATABRICKS_SERVER_HOSTNAME", "https://prod.databricks.com")
-        clean_env.setenv("PRODUCTION_DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/prod123")
+        clean_env.setenv(
+            "PRODUCTION_DATABRICKS_SERVER_HOSTNAME", "https://prod.databricks.com"
+        )
+        clean_env.setenv(
+            "PRODUCTION_DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/prod123"
+        )
         clean_env.setenv("PRODUCTION_DATABRICKS_TOKEN", "dapi_prod_token_1234567890ab")
 
         manager = WorkspaceConfigManager(role="analyst")
@@ -225,8 +231,12 @@ class TestWorkspaceConfigManager:
             clean_env: Fixture providing clean environment without Databricks configs.
         """
         # Set up production workspace only, no default
-        clean_env.setenv("PRODUCTION_DATABRICKS_SERVER_HOSTNAME", "https://prod.databricks.com")
-        clean_env.setenv("PRODUCTION_DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/prod123")
+        clean_env.setenv(
+            "PRODUCTION_DATABRICKS_SERVER_HOSTNAME", "https://prod.databricks.com"
+        )
+        clean_env.setenv(
+            "PRODUCTION_DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/prod123"
+        )
         clean_env.setenv("PRODUCTION_DATABRICKS_TOKEN", "dapi_prod_token_1234567890ab")
 
         manager = WorkspaceConfigManager(role="developer")
@@ -243,7 +253,9 @@ class TestWorkspaceConfigManager:
 
     # ==================== Discovery Tests ====================
 
-    def test_workspace_manager_discover_prefixes(self, multi_workspace_env: pytest.MonkeyPatch):
+    def test_workspace_manager_discover_prefixes(
+        self, multi_workspace_env: pytest.MonkeyPatch
+    ):
         """Test workspace prefix discovery from environment variables.
 
         The manager should be able to discover all workspace prefixes by scanning
@@ -302,7 +314,9 @@ class TestWorkspaceConfigManager:
         assert "analyst" in error_msg
         assert "developer" in error_msg
 
-    def test_workspace_manager_role_validation(self, default_workspace_env: pytest.MonkeyPatch):
+    def test_workspace_manager_role_validation(
+        self, default_workspace_env: pytest.MonkeyPatch
+    ):
         """Test both valid roles initialize successfully.
 
         Both 'analyst' and 'developer' roles should initialize without errors
@@ -412,7 +426,9 @@ def default_workspace_env(clean_env: pytest.MonkeyPatch) -> pytest.MonkeyPatch:
 
 
 @pytest.fixture
-def multi_workspace_env(default_workspace_env: pytest.MonkeyPatch) -> pytest.MonkeyPatch:
+def multi_workspace_env(
+    default_workspace_env: pytest.MonkeyPatch,
+) -> pytest.MonkeyPatch:
     """Set up multiple workspaces in environment.
 
     Creates default, production, and dev workspace configurations for testing
@@ -428,12 +444,20 @@ def multi_workspace_env(default_workspace_env: pytest.MonkeyPatch) -> pytest.Mon
     default_workspace_env.setenv(
         "PRODUCTION_DATABRICKS_SERVER_HOSTNAME", "https://prod.databricks.com"
     )
-    default_workspace_env.setenv("PRODUCTION_DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/prod123")
-    default_workspace_env.setenv("PRODUCTION_DATABRICKS_TOKEN", "dapi_prod_token_1234567890ab")
+    default_workspace_env.setenv(
+        "PRODUCTION_DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/prod123"
+    )
+    default_workspace_env.setenv(
+        "PRODUCTION_DATABRICKS_TOKEN", "dapi_prod_token_1234567890ab"
+    )
 
     # Add dev workspace
-    default_workspace_env.setenv("DEV_DATABRICKS_SERVER_HOSTNAME", "https://dev.databricks.com")
-    default_workspace_env.setenv("DEV_DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/dev123")
+    default_workspace_env.setenv(
+        "DEV_DATABRICKS_SERVER_HOSTNAME", "https://dev.databricks.com"
+    )
+    default_workspace_env.setenv(
+        "DEV_DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/dev123"
+    )
     default_workspace_env.setenv("DEV_DATABRICKS_TOKEN", "dapi_dev_token_1234567890ab")
 
     return default_workspace_env

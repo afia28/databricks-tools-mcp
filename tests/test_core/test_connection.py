@@ -72,7 +72,10 @@ class TestConnectionManagerContextProtocol:
 
     @patch("databricks_tools.core.connection.sql.connect")
     def test_connection_manager_context_manager(
-        self, mock_connect: Mock, mock_config: WorkspaceConfig, mock_connection: MagicMock
+        self,
+        mock_connect: Mock,
+        mock_config: WorkspaceConfig,
+        mock_connection: MagicMock,
     ):
         """Test basic context manager usage (with statement).
 
@@ -98,7 +101,10 @@ class TestConnectionManagerContextProtocol:
 
     @patch("databricks_tools.core.connection.sql.connect")
     def test_connection_manager_auto_close(
-        self, mock_connect: Mock, mock_config: WorkspaceConfig, mock_connection: MagicMock
+        self,
+        mock_connect: Mock,
+        mock_config: WorkspaceConfig,
+        mock_connection: MagicMock,
     ):
         """Test connection is automatically closed on context exit.
 
@@ -166,7 +172,10 @@ class TestConnectionManagerContextProtocol:
 
     @patch("databricks_tools.core.connection.sql.connect")
     def test_connection_manager_exception_handling(
-        self, mock_connect: Mock, mock_config: WorkspaceConfig, mock_connection: MagicMock
+        self,
+        mock_connect: Mock,
+        mock_config: WorkspaceConfig,
+        mock_connection: MagicMock,
     ):
         """Test connection is closed even if exception occurs in context.
 
@@ -217,7 +226,10 @@ class TestConnectionManagerLifecycle:
 
     @patch("databricks_tools.core.connection.sql.connect")
     def test_connection_manager_get_connection(
-        self, mock_connect: Mock, mock_config: WorkspaceConfig, mock_connection: MagicMock
+        self,
+        mock_connect: Mock,
+        mock_config: WorkspaceConfig,
+        mock_connection: MagicMock,
     ):
         """Test get_connection() creates and reuses connections.
 
@@ -251,7 +263,10 @@ class TestConnectionManagerLifecycle:
 
     @patch("databricks_tools.core.connection.sql.connect")
     def test_connection_manager_explicit_close(
-        self, mock_connect: Mock, mock_config: WorkspaceConfig, mock_connection: MagicMock
+        self,
+        mock_connect: Mock,
+        mock_config: WorkspaceConfig,
+        mock_connection: MagicMock,
     ):
         """Test explicit close() method.
 
@@ -284,7 +299,10 @@ class TestConnectionManagerLifecycle:
 
     @patch("databricks_tools.core.connection.sql.connect")
     def test_connection_manager_reuse_connection(
-        self, mock_connect: Mock, mock_config: WorkspaceConfig, mock_connection: MagicMock
+        self,
+        mock_connect: Mock,
+        mock_config: WorkspaceConfig,
+        mock_connection: MagicMock,
     ):
         """Test get_connection() doesn't create new connection if one exists.
 
@@ -314,7 +332,10 @@ class TestConnectionManagerLifecycle:
 
     @patch("databricks_tools.core.connection.sql.connect")
     def test_connection_manager_is_connected(
-        self, mock_connect: Mock, mock_config: WorkspaceConfig, mock_connection: MagicMock
+        self,
+        mock_connect: Mock,
+        mock_config: WorkspaceConfig,
+        mock_connection: MagicMock,
     ):
         """Test is_connected property lifecycle.
 
@@ -455,7 +476,10 @@ class TestConnectionManagerIntegration:
 
     @patch("databricks_tools.core.connection.sql.connect")
     def test_connection_manager_connection_properties(
-        self, mock_connect: Mock, mock_config: WorkspaceConfig, mock_connection: MagicMock
+        self,
+        mock_connect: Mock,
+        mock_config: WorkspaceConfig,
+        mock_connection: MagicMock,
     ):
         """Test connection is created with correct parameters.
 
@@ -488,7 +512,10 @@ class TestConnectionManagerIntegration:
 
     @patch("databricks_tools.core.connection.sql.connect")
     def test_connection_manager_context_uses_correct_parameters(
-        self, mock_connect: Mock, mock_config: WorkspaceConfig, mock_connection: MagicMock
+        self,
+        mock_connect: Mock,
+        mock_config: WorkspaceConfig,
+        mock_connection: MagicMock,
     ):
         """Test context manager also passes correct parameters.
 

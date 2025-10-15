@@ -140,6 +140,7 @@ databricks-tools-clean/
          __init__.py
          token_counter.py # Token counting utility with caching (US-2.1)
          connection.py    # Database connection manager (US-2.2)
+         query_executor.py # SQL query executor service (US-2.3)
       security/
          __init__.py
          role_manager.py  # Role-based access control manager (US-1.3)
@@ -152,6 +153,7 @@ databricks-tools-clean/
          __init__.py
          test_token_counter.py # Token counter tests (28 tests, 100% coverage)
          test_connection.py    # Connection manager tests (16 tests, 100% coverage)
+         test_query_executor.py # Query executor tests (22 tests, 100% coverage)
       test_security/
          __init__.py
          test_role_manager.py # Role manager tests (21 tests, 92% coverage)

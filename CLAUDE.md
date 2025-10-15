@@ -30,11 +30,13 @@ uv run pytest tests/ --cov=src/databricks_tools  # Run tests with coverage
 - `src/databricks_tools/config/workspace.py` - Workspace configuration manager (US-1.2)
 - `src/databricks_tools/core/token_counter.py` - Token counting utility with caching (US-2.1)
 - `src/databricks_tools/core/connection.py` - Database connection manager (US-2.2)
+- `src/databricks_tools/core/query_executor.py` - SQL query executor service (US-2.3)
 - `src/databricks_tools/security/role_manager.py` - Role-based access control manager (US-1.3)
 - `tests/test_config/test_models.py` - Configuration model tests (32 tests, 100% coverage)
 - `tests/test_config/test_workspace.py` - Workspace manager tests (14 tests, 94% coverage)
 - `tests/test_core/test_token_counter.py` - Token counter tests (28 tests, 100% coverage)
 - `tests/test_core/test_connection.py` - Connection manager tests (16 tests, 100% coverage)
+- `tests/test_core/test_query_executor.py` - Query executor tests (22 tests, 100% coverage)
 - `tests/test_security/test_role_manager.py` - Role manager tests (21 tests, 92% coverage)
 - `pyproject.toml` - Project configuration and dependencies
 - `.env` - Databricks workspace credentials (not in git)
@@ -155,4 +157,16 @@ For incremental improvements:
 - Full integration with databricks.sql.connect
 - SecretStr handling for secure access token management
 - 16 tests, 100% coverage
-- Total tests: 111 tests, all passing
+
+**US-2.3: Query Executor Service** - Completed
+- Created QueryExecutor class using Repository pattern
+- Implements execute_query method returning pandas DataFrame
+- Implements execute_query_with_catalog for catalog context queries
+- Integrates with ConnectionManager for safe resource management
+- Uses WorkspaceConfigManager for workspace resolution
+- Legacy wrapper functions in server.py maintain backward compatibility
+- Handles query errors gracefully with proper exception propagation
+- Full type hints and Google-style docstrings
+- 22 tests, 100% coverage
+- Total tests: 133 tests, all passing
+- Phase 2 - Core Services: COMPLETE

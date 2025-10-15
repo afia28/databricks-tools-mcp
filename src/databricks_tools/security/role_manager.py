@@ -298,7 +298,9 @@ class RoleManager:
             try:
                 self.role = Role(role)
             except ValueError as e:
-                raise ValueError(f"Invalid role '{role}'. Must be 'analyst' or 'developer'.") from e
+                raise ValueError(
+                    f"Invalid role '{role}'. Must be 'analyst' or 'developer'."
+                ) from e
         else:
             self.role = role
 

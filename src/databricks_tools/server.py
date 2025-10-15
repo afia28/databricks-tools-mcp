@@ -5,11 +5,11 @@ import uuid
 from datetime import datetime
 
 import pandas as pd
-from databricks import sql
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 from databricks_tools.config.workspace import WorkspaceConfigManager
+from databricks_tools.core.query_executor import QueryExecutor
 from databricks_tools.core.token_counter import TokenCounter
 from databricks_tools.security.role_manager import Role, RoleManager
 
@@ -22,6 +22,9 @@ _role_manager = RoleManager(role=Role.ANALYST)
 
 # Workspace configuration manager instance (initialized with role_manager)
 _workspace_manager = WorkspaceConfigManager(role_manager=_role_manager)
+
+# Query executor instance
+_query_executor = QueryExecutor(_workspace_manager)
 
 # Token counting utility instance
 _token_counter = TokenCounter(model="gpt-4")
@@ -152,7 +155,9 @@ def create_chunked_response(data: dict, max_tokens: int = MAX_RESPONSE_TOKENS) -
 
     # Calculate how many rows can fit in each chunk
     base_tokens = estimate_response_tokens(base_response)
-    available_tokens = max_tokens - base_tokens - 500  # Reserve 500 tokens for chunk metadata
+    available_tokens = (
+        max_tokens - base_tokens - 500
+    )  # Reserve 500 tokens for chunk metadata
 
     # Estimate tokens per row (using first few rows as sample)
     if rows:
@@ -217,84 +222,45 @@ def create_chunked_response(data: dict, max_tokens: int = MAX_RESPONSE_TOKENS) -
 
 
 def databricks_sql_query(
-    query: str, parse_dates: list = None, workspace: str | None = None
+    query: str, parse_dates: list[str] | None = None, workspace: str | None = None
 ) -> pd.DataFrame:
-    """
-    Executes a SQL query against a Databricks SQL endpoint using environment credentials.
+    """Execute SQL query using QueryExecutor service.
 
-    Parameters:
-    ----------
-    query : str
-        The SQL query string to execute.
-    parse_dates : list, optional
-        List of column names to parse as dates.
-    workspace : str, optional
-        The workspace name to connect to.
-        - In ANALYST mode: This parameter is ignored, always uses default workspace.
-        - In DEVELOPER mode: If None or not found, falls back to default workspace.
+    Legacy wrapper function for backward compatibility with existing code.
+
+    Args:
+        query: SQL query string to execute.
+        parse_dates: Optional list of column names to parse as dates.
+        workspace: Optional workspace name.
 
     Returns:
-    -------
-    pd.DataFrame
-        The result of the query as a pandas DataFrame.
+        pandas DataFrame with query results.
+
+    Example:
+        >>> df = databricks_sql_query("SELECT 1 as value")
     """
-    config = get_workspace_config(workspace)
-    connection = sql.connect(
-        server_hostname=config["server_hostname"],
-        http_path=config["http_path"],
-        access_token=config["access_token"],
-    )
-    df = pd.read_sql(query, connection, parse_dates=parse_dates)
-    connection.close()
-    return df
+    return _query_executor.execute_query(query, workspace, parse_dates)
 
 
 def databricks_sql_query_with_catalog(
     catalog: str, query: str, workspace: str | None = None
 ) -> pd.DataFrame:
-    """
-    Executes a SQL query with catalog context set. Used specifically for UDF operations.
+    """Execute query with catalog context using QueryExecutor service.
 
-    This function ensures the catalog context is set before executing the main query
-    by running USE CATALOG within the same connection/cursor session.
+    Legacy wrapper function for backward compatibility with existing code.
 
-    Parameters:
-    ----------
-    catalog : str
-        The catalog to set as context.
-    query : str
-        The SQL query string to execute after setting catalog context.
-    workspace : str, optional
-        The workspace name to connect to.
+    Args:
+        catalog: Catalog name to set as context.
+        query: SQL query string to execute.
+        workspace: Optional workspace name.
 
     Returns:
-    -------
-    pd.DataFrame
-        The result of the query as a pandas DataFrame.
+        pandas DataFrame with query results.
+
+    Example:
+        >>> df = databricks_sql_query_with_catalog("my_catalog", "SELECT * FROM my_table")
     """
-    config = get_workspace_config(workspace)
-    connection = sql.connect(
-        server_hostname=config["server_hostname"],
-        http_path=config["http_path"],
-        access_token=config["access_token"],
-    )
-
-    cursor = connection.cursor()
-
-    # Set catalog context
-    cursor.execute(f"USE CATALOG {catalog}")
-
-    # Execute the main query
-    cursor.execute(query)
-
-    # Fetch results and create DataFrame
-    result = cursor.fetchall()
-    columns = [desc[0] for desc in cursor.description] if cursor.description else []
-    df = pd.DataFrame(result, columns=columns)
-
-    cursor.close()
-    connection.close()
-    return df
+    return _query_executor.execute_query_with_catalog(catalog, query, workspace)
 
 
 @mcp.tool()
@@ -406,10 +372,13 @@ async def get_chunking_session_info(session_id: str) -> str:
             "chunks_delivered": session["chunks_delivered"],
             "chunks_remaining": session["total_chunks"] - session["chunks_delivered"],
             "created_at": session["created_at"].isoformat(),
-            "all_chunks_delivered": session["chunks_delivered"] >= session["total_chunks"],
-            "next_chunk_to_request": min(session["chunks_delivered"] + 1, session["total_chunks"])
-            if session["chunks_delivered"] < session["total_chunks"]
-            else None,
+            "all_chunks_delivered": session["chunks_delivered"]
+            >= session["total_chunks"],
+            "next_chunk_to_request": (
+                min(session["chunks_delivered"] + 1, session["total_chunks"])
+                if session["chunks_delivered"] < session["total_chunks"]
+                else None
+            ),
             "chunk_token_amounts": session.get("chunk_token_amounts", {}),
             "reconstruction_instructions": (
                 f"Use get_chunk(session_id='{session_id}', chunk_number=N) "
@@ -953,12 +922,16 @@ async def describe_function(
                 if desc_line.startswith("Configs:"):
                     skip_configs = True
                     continue
-                elif desc_line.startswith("Owner:") or desc_line.startswith("Create Time:"):
+                elif desc_line.startswith("Owner:") or desc_line.startswith(
+                    "Create Time:"
+                ):
                     continue
                 elif skip_configs and desc_line.startswith("               "):
                     # Skip config lines (they are indented with many spaces)
                     continue
-                elif desc_line.startswith("Deterministic:") or desc_line.startswith("Data Access:"):
+                elif desc_line.startswith("Deterministic:") or desc_line.startswith(
+                    "Data Access:"
+                ):
                     skip_configs = False  # These come after configs, so stop skipping
 
                 # Add lines we want to keep
@@ -1080,7 +1053,9 @@ async def list_and_describe_all_functions(
         func_name = func.split(".")[-1]
 
         try:
-            describe_query = f"DESCRIBE FUNCTION EXTENDED {catalog}.{schema}.{func_name}"
+            describe_query = (
+                f"DESCRIBE FUNCTION EXTENDED {catalog}.{schema}.{func_name}"
+            )
             desc_df = databricks_sql_query_with_catalog(
                 catalog, describe_query, workspace=workspace
             )
@@ -1096,7 +1071,9 @@ async def list_and_describe_all_functions(
                     if desc_line.startswith("Configs:"):
                         skip_configs = True
                         continue
-                    elif desc_line.startswith("Owner:") or desc_line.startswith("Create Time:"):
+                    elif desc_line.startswith("Owner:") or desc_line.startswith(
+                        "Create Time:"
+                    ):
                         continue
                     elif skip_configs and desc_line.startswith("               "):
                         # Skip config lines (they are indented with many spaces)
@@ -1104,7 +1081,9 @@ async def list_and_describe_all_functions(
                     elif desc_line.startswith("Deterministic:") or desc_line.startswith(
                         "Data Access:"
                     ):
-                        skip_configs = False  # These come after configs, so stop skipping
+                        skip_configs = (
+                            False  # These come after configs, so stop skipping
+                        )
 
                     # Add lines we want to keep
                     if (
@@ -1149,7 +1128,7 @@ async def list_and_describe_all_functions(
 
 def main():
     """Main entry point for the databricks-tools MCP server."""
-    global _role_manager, _workspace_manager
+    global _role_manager, _workspace_manager, _query_executor
 
     # Parse command-line arguments for role-based access control
     parser = argparse.ArgumentParser(description="Databricks MCP Server")
@@ -1161,11 +1140,13 @@ def main():
 
     args = parser.parse_args()
 
-    # AIDEV-NOTE: Update role manager and workspace manager if developer mode enabled
+    # AIDEV-NOTE: Update role manager, workspace manager, and query executor if developer mode enabled
     if args.developer:
         _role_manager = RoleManager(role=Role.DEVELOPER)
         # Reinitialize workspace manager with developer role manager
         _workspace_manager = WorkspaceConfigManager(role_manager=_role_manager)
+        # Reinitialize query executor with updated workspace manager
+        _query_executor = QueryExecutor(_workspace_manager)
 
     # Initialize and run the server
     mcp.run(transport="stdio")
