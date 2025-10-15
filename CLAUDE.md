@@ -32,12 +32,22 @@ uv run pytest tests/ --cov=src/databricks_tools  # Run tests with coverage
 - `src/databricks_tools/core/connection.py` - Database connection manager (US-2.2)
 - `src/databricks_tools/core/query_executor.py` - SQL query executor service (US-2.3)
 - `src/databricks_tools/security/role_manager.py` - Role-based access control manager (US-1.3)
+- `src/databricks_tools/services/catalog_service.py` - Catalog operations service (US-3.1)
+- `src/databricks_tools/services/table_service.py` - Table operations service (US-3.2)
+- `src/databricks_tools/services/function_service.py` - UDF operations service (US-3.3)
+- `src/databricks_tools/services/chunking_service.py` - Response chunking service (US-4.1)
+- `src/databricks_tools/services/response_manager.py` - Response formatting manager (US-4.2)
 - `tests/test_config/test_models.py` - Configuration model tests (32 tests, 100% coverage)
 - `tests/test_config/test_workspace.py` - Workspace manager tests (14 tests, 94% coverage)
 - `tests/test_core/test_token_counter.py` - Token counter tests (28 tests, 100% coverage)
 - `tests/test_core/test_connection.py` - Connection manager tests (16 tests, 100% coverage)
 - `tests/test_core/test_query_executor.py` - Query executor tests (22 tests, 100% coverage)
 - `tests/test_security/test_role_manager.py` - Role manager tests (21 tests, 92% coverage)
+- `tests/test_services/test_catalog_service.py` - Catalog service tests (30 tests, 100% coverage)
+- `tests/test_services/test_table_service.py` - Table service tests (41 tests, 100% coverage)
+- `tests/test_services/test_function_service.py` - Function service tests (36 tests, 100% coverage)
+- `tests/test_services/test_chunking_service.py` - Chunking service tests (30 tests, 100% coverage)
+- `tests/test_services/test_response_manager.py` - Response manager tests (39 tests, 100% coverage)
 - `pyproject.toml` - Project configuration and dependencies
 - `.env` - Databricks workspace credentials (not in git)
 
@@ -168,5 +178,49 @@ For incremental improvements:
 - Handles query errors gracefully with proper exception propagation
 - Full type hints and Google-style docstrings
 - 22 tests, 100% coverage
-- Total tests: 133 tests, all passing
 - Phase 2 - Core Services: COMPLETE
+
+**US-3.1: Create Catalog Service** - Completed
+- Created CatalogService class in services package
+- Implements list_catalogs and list_schemas methods
+- Delegates to QueryExecutor for database operations
+- Full dependency injection pattern with TokenCounter and QueryExecutor
+- 30 tests, 100% coverage
+
+**US-3.2: Create Table Service** - Completed
+- Created TableService class in services package
+- Implements list_tables, list_columns, get_table_row_count, get_table_details methods
+- Filters internal Databricks columns (_rescued_data)
+- Full dependency injection pattern
+- 41 tests, 100% coverage
+
+**US-3.3: Create Function Service** - Completed
+- Created FunctionService class in services package
+- Implements list_user_functions, describe_function, list_and_describe_all_functions methods
+- Parses and filters UDF descriptions for cleaner output
+- Full dependency injection pattern
+- 36 tests, 100% coverage
+- Total tests: 267 tests, all passing
+- Phase 3 - Service Layer: COMPLETE
+
+**US-4.1: Create Chunking Service** - Completed
+- Created ChunkingService class in services package
+- Implements create_chunked_response, get_chunk, get_session_info methods
+- Session-based state management with UUID session IDs
+- Automatic session cleanup/expiry mechanism (60-minute TTL)
+- Replaced global CHUNK_SESSIONS dict with service instance
+- Integrated with get_chunk and get_chunking_session_info MCP tools
+- 30 tests, 100% coverage
+
+**US-4.2: Create Response Manager** - Completed
+- Created ResponseManager class in services package for centralized response formatting
+- Implements format_response() with automatic token checking and chunking
+- Implements format_error() for consistent error response formatting
+- Integrated with all 13 MCP tools in server.py
+- Eliminated ~200 lines of duplicated JSON serialization code
+- Reduced server.py by 62 net lines through code reuse
+- Automatic chunking for responses exceeding 9000 token limit
+- Support for auto_chunk=False parameter for special cases
+- 39 tests, 100% coverage
+- Total tests: 306 tests, all passing
+- Phase 4 - Chunking & Response Management: COMPLETE

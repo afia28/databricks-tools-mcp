@@ -13,6 +13,7 @@ from databricks_tools.security.role_manager import Role, RoleManager
 from databricks_tools.services.catalog_service import CatalogService
 from databricks_tools.services.chunking_service import ChunkingService
 from databricks_tools.services.function_service import FunctionService
+from databricks_tools.services.response_manager import ResponseManager
 from databricks_tools.services.table_service import TableService
 
 # Initialize FastMCP server
@@ -47,6 +48,11 @@ _function_service = FunctionService(
 
 # Chunking service instance
 _chunking_service = ChunkingService(_token_counter, MAX_RESPONSE_TOKENS)
+
+# AIDEV-NOTE: Response manager instance for centralized response formatting and token validation
+_response_manager = ResponseManager(
+    _token_counter, _chunking_service, MAX_RESPONSE_TOKENS
+)
 
 
 # Constants and Configuration
@@ -217,7 +223,7 @@ async def list_workspaces() -> str:
         A JSON-formatted list of available workspace names.
     """
     workspaces = get_available_workspaces()
-    return json.dumps(workspaces, indent=2)
+    return _response_manager.format_response(workspaces)
 
 
 @mcp.tool()
@@ -240,29 +246,23 @@ async def get_chunk(session_id: str, chunk_number: int) -> str:
     try:
         # Use ChunkingService to get chunk
         chunk = _chunking_service.get_chunk(session_id, chunk_number)
-        return json.dumps(chunk, indent=2, separators=(",", ":"))
+        return _response_manager.format_response(chunk, auto_chunk=False)
     except ValueError as e:
         # Handle session not found or invalid chunk number
         error_message = str(e)
         if "Session not found" in error_message:
-            return json.dumps(
-                {
-                    "error": "Session not found",
-                    "session_id": session_id,
-                    "message": "The specified session ID does not exist or has expired.",
-                },
-                indent=2,
+            return _response_manager.format_error(
+                "Session not found",
+                "The specified session ID does not exist or has expired.",
+                session_id=session_id,
             )
         else:
             # Invalid chunk number
-            return json.dumps(
-                {
-                    "error": "Invalid chunk number",
-                    "session_id": session_id,
-                    "chunk_number": chunk_number,
-                    "message": error_message,
-                },
-                indent=2,
+            return _response_manager.format_error(
+                "Invalid chunk number",
+                error_message,
+                session_id=session_id,
+                chunk_number=chunk_number,
             )
 
 
@@ -284,16 +284,13 @@ async def get_chunking_session_info(session_id: str) -> str:
     try:
         # Use ChunkingService to get session info
         session_info = _chunking_service.get_session_info(session_id)
-        return json.dumps(session_info, indent=2)
+        return _response_manager.format_response(session_info, auto_chunk=False)
     except ValueError:
         # Handle session not found
-        return json.dumps(
-            {
-                "error": "Session not found",
-                "session_id": session_id,
-                "message": "The specified session ID does not exist or has expired.",
-            },
-            indent=2,
+        return _response_manager.format_error(
+            "Session not found",
+            "The specified session ID does not exist or has expired.",
+            session_id=session_id,
         )
 
 
@@ -325,7 +322,7 @@ async def get_table_row_count(
     # Use TableService to get row count
     result = _table_service.get_table_row_count(catalog, schema, table_name, workspace)
 
-    return json.dumps(result, indent=2, separators=(",", ":"))
+    return _response_manager.format_response(result)
 
 
 @mcp.tool()
@@ -365,18 +362,8 @@ async def get_table_details(
         catalog, schema, table_name, limit, workspace
     )
 
-    # Check token count before formatting final response
-    temp_response = json.dumps(result, separators=(",", ":"))
-    token_count = count_tokens(temp_response)
-
-    if token_count > MAX_RESPONSE_TOKENS:
-        # Create chunked response instead of error
-        chunked_response = create_chunked_response(result)
-        return json.dumps(chunked_response, indent=2, separators=(",", ":"))
-
-    # Format the response
-    final_data = json.dumps(result, indent=2, separators=(",", ":"))
-    return final_data
+    # AIDEV-NOTE: ResponseManager automatically handles token checking and chunking
+    return _response_manager.format_response(result)
 
 
 @mcp.tool()
@@ -405,20 +392,8 @@ async def run_query(query: str, workspace: str | None = None) -> str:
     df_json = json.loads(df.to_json(orient="table", index=False))
     result = {"data": df_json["data"], "schema": df_json["schema"], "query": query}
 
-    # Add query information
-
-    # Check token count before formatting final response
-    temp_response = json.dumps(result, separators=(",", ":"))
-    token_count = count_tokens(temp_response)
-
-    if token_count > MAX_RESPONSE_TOKENS:
-        # Create chunked response instead of error
-        chunked_response = create_chunked_response(result)
-        return json.dumps(chunked_response, indent=2, separators=(",", ":"))
-
-    # Format the response
-    final_data = json.dumps(result, indent=2, separators=(",", ":"))
-    return final_data
+    # AIDEV-NOTE: ResponseManager automatically handles token checking and chunking
+    return _response_manager.format_response(result)
 
 
 # Tools for listing catalogs, schemas, and tables
@@ -453,11 +428,11 @@ async def list_catalogs(workspace: str | None = None) -> str:
         catalogs = _catalog_service.list_catalogs(workspace)
 
         # Return as JSON
-        return json.dumps(catalogs, indent=2)
+        return _response_manager.format_response(catalogs)
 
     except Exception as e:
         error_msg = f"Error listing catalogs: {str(e)}"
-        return json.dumps({"error": error_msg})
+        return _response_manager.format_error("Error", error_msg)
 
 
 @mcp.tool()
@@ -503,11 +478,11 @@ async def list_schemas(
         result = _catalog_service.list_schemas(catalog_list, workspace)
 
         # Return as JSON
-        return json.dumps(result, indent=2)
+        return _response_manager.format_response(result)
 
     except Exception as e:
         error_msg = f"Error listing schemas: {str(e)}"
-        return json.dumps({"error": error_msg})
+        return _response_manager.format_error("Error", error_msg)
 
 
 @mcp.tool()
@@ -538,25 +513,23 @@ async def list_tables(catalog: str, schemas: list, workspace: str | None = None)
     temp_response = json.dumps(result, separators=(",", ":"))
     token_count = count_tokens(temp_response)
 
+    # AIDEV-NOTE: list_tables doesn't support chunking (no 'data' key), so return error for large responses
     if token_count > MAX_RESPONSE_TOKENS:
         # Return error with guidance
-        error_response = json.dumps(
-            {
-                "error": "Response too large",
-                "message": f"Response would be {token_count} tokens (limit: {MAX_RESPONSE_TOKENS})",
-                "catalog": catalog,
-                "schemas_requested": len(schemas),
-                "suggestions": [
-                    "Request fewer schemas at once",
-                    f"Split the {len(schemas)} schemas into smaller batches",
-                ],
-            },
-            indent=2,
+        error_response = _response_manager.format_error(
+            "Response too large",
+            f"Response would be {token_count} tokens (limit: {MAX_RESPONSE_TOKENS})",
+            catalog=catalog,
+            schemas_requested=len(schemas),
+            suggestions=[
+                "Request fewer schemas at once",
+                f"Split the {len(schemas)} schemas into smaller batches",
+            ],
         )
         return "\n---\n".join([error_response])
 
-    result = json.dumps(result, indent=2)
-    return "\n---\n".join([result])
+    formatted_result = _response_manager.format_response(result, auto_chunk=False)
+    return "\n---\n".join([formatted_result])
 
 
 @mcp.tool()
@@ -592,27 +565,25 @@ async def list_columns(
     temp_response = json.dumps(result, separators=(",", ":"))
     token_count = count_tokens(temp_response)
 
+    # AIDEV-NOTE: list_columns doesn't support chunking (no 'data' key), so return error for large responses
     if token_count > MAX_RESPONSE_TOKENS:
         # Return error with guidance for large responses
-        error_response = json.dumps(
-            {
-                "error": "Response too large",
-                "message": f"Response would be {token_count} tokens (limit: {MAX_RESPONSE_TOKENS})",
-                "catalog": catalog,
-                "schema": schema,
-                "tables_requested": len(tables),
-                "suggestions": [
-                    "Request fewer tables at once",
-                    "Use individual table queries instead of batch",
-                    f"Split the {len(tables)} tables into smaller batches",
-                ],
-            },
-            indent=2,
+        error_response = _response_manager.format_error(
+            "Response too large",
+            f"Response would be {token_count} tokens (limit: {MAX_RESPONSE_TOKENS})",
+            catalog=catalog,
+            schema=schema,
+            tables_requested=len(tables),
+            suggestions=[
+                "Request fewer tables at once",
+                "Use individual table queries instead of batch",
+                f"Split the {len(tables)} tables into smaller batches",
+            ],
         )
         return "\n---\n".join([error_response])
 
-    result = json.dumps(result, indent=2)
-    return "\n---\n".join([result])
+    formatted_result = _response_manager.format_response(result, auto_chunk=False)
+    return "\n---\n".join([formatted_result])
 
 
 @mcp.tool()
@@ -644,23 +615,17 @@ async def list_user_functions(
     if catalog is None:
         catalog = os.getenv("DATABRICKS_DEFAULT_CATALOG")
         if not catalog:
-            return json.dumps(
-                {
-                    "error": "No catalog specified",
-                    "message": "Please provide a catalog parameter or set DATABRICKS_DEFAULT_CATALOG environment variable",
-                },
-                indent=2,
+            return _response_manager.format_error(
+                "No catalog specified",
+                "Please provide a catalog parameter or set DATABRICKS_DEFAULT_CATALOG environment variable",
             )
 
     if schema is None:
         schema = os.getenv("DATABRICKS_DEFAULT_SCHEMA")
         if not schema:
-            return json.dumps(
-                {
-                    "error": "No schema specified",
-                    "message": "Please provide a schema parameter or set DATABRICKS_DEFAULT_SCHEMA environment variable",
-                },
-                indent=2,
+            return _response_manager.format_error(
+                "No schema specified",
+                "Please provide a schema parameter or set DATABRICKS_DEFAULT_SCHEMA environment variable",
             )
 
     # Use FunctionService to list user functions
@@ -670,26 +635,24 @@ async def list_user_functions(
     temp_response = json.dumps(result, separators=(",", ":"))
     token_count = count_tokens(temp_response)
 
+    # AIDEV-NOTE: list_user_functions doesn't support chunking, so return error for large responses
     if token_count > MAX_RESPONSE_TOKENS:
         # Return error with guidance
-        error_response = json.dumps(
-            {
-                "error": "Response too large",
-                "message": f"Response would be {token_count} tokens (limit: {MAX_RESPONSE_TOKENS})",
-                "catalog": catalog,
-                "schema": schema,
-                "function_count": result.get("function_count", 0),
-                "suggestions": [
-                    "Too many functions to display at once",
-                    "Consider using specific function queries",
-                ],
-            },
-            indent=2,
+        error_response = _response_manager.format_error(
+            "Response too large",
+            f"Response would be {token_count} tokens (limit: {MAX_RESPONSE_TOKENS})",
+            catalog=catalog,
+            schema=schema,
+            function_count=result.get("function_count", 0),
+            suggestions=[
+                "Too many functions to display at once",
+                "Consider using specific function queries",
+            ],
         )
         return "\n---\n".join([error_response])
 
-    result = json.dumps(result, indent=2)
-    return "\n---\n".join([result])
+    formatted_result = _response_manager.format_response(result, auto_chunk=False)
+    return "\n---\n".join([formatted_result])
 
 
 @mcp.tool()
@@ -727,23 +690,17 @@ async def describe_function(
     if catalog is None:
         catalog = os.getenv("DATABRICKS_DEFAULT_CATALOG")
         if not catalog:
-            return json.dumps(
-                {
-                    "error": "No catalog specified",
-                    "message": "Please provide a catalog parameter or set DATABRICKS_DEFAULT_CATALOG environment variable",
-                },
-                indent=2,
+            return _response_manager.format_error(
+                "No catalog specified",
+                "Please provide a catalog parameter or set DATABRICKS_DEFAULT_CATALOG environment variable",
             )
 
     if schema is None:
         schema = os.getenv("DATABRICKS_DEFAULT_SCHEMA")
         if not schema:
-            return json.dumps(
-                {
-                    "error": "No schema specified",
-                    "message": "Please provide a schema parameter or set DATABRICKS_DEFAULT_SCHEMA environment variable",
-                },
-                indent=2,
+            return _response_manager.format_error(
+                "No schema specified",
+                "Please provide a schema parameter or set DATABRICKS_DEFAULT_SCHEMA environment variable",
             )
 
     try:
@@ -752,28 +709,17 @@ async def describe_function(
             function_name, catalog, schema, workspace
         )
 
-        # Check token count before formatting
-        temp_response = json.dumps(function_info, separators=(",", ":"))
-        token_count = count_tokens(temp_response)
-
-        if token_count > MAX_RESPONSE_TOKENS:
-            # Create chunked response
-            chunked_response = create_chunked_response(function_info)
-            return json.dumps(chunked_response, indent=2, separators=(",", ":"))
-
-        result = json.dumps(function_info, indent=2)
-        return "\n---\n".join([result])
+        # AIDEV-NOTE: ResponseManager automatically handles token checking and chunking
+        formatted_result = _response_manager.format_response(function_info)
+        return "\n---\n".join([formatted_result])
 
     except Exception as e:
-        error_response = json.dumps(
-            {
-                "error": "Function not found or error describing function",
-                "catalog": catalog,
-                "schema": schema,
-                "function_name": function_name,
-                "message": str(e),
-            },
-            indent=2,
+        error_response = _response_manager.format_error(
+            "Function not found or error describing function",
+            str(e),
+            catalog=catalog,
+            schema=schema,
+            function_name=function_name,
         )
         return "\n---\n".join([error_response])
 
@@ -813,23 +759,17 @@ async def list_and_describe_all_functions(
     if catalog is None:
         catalog = os.getenv("DATABRICKS_DEFAULT_CATALOG")
         if not catalog:
-            return json.dumps(
-                {
-                    "error": "No catalog specified",
-                    "message": "Please provide a catalog parameter or set DATABRICKS_DEFAULT_CATALOG environment variable",
-                },
-                indent=2,
+            return _response_manager.format_error(
+                "No catalog specified",
+                "Please provide a catalog parameter or set DATABRICKS_DEFAULT_CATALOG environment variable",
             )
 
     if schema is None:
         schema = os.getenv("DATABRICKS_DEFAULT_SCHEMA")
         if not schema:
-            return json.dumps(
-                {
-                    "error": "No schema specified",
-                    "message": "Please provide a schema parameter or set DATABRICKS_DEFAULT_SCHEMA environment variable",
-                },
-                indent=2,
+            return _response_manager.format_error(
+                "No schema specified",
+                "Please provide a schema parameter or set DATABRICKS_DEFAULT_SCHEMA environment variable",
             )
 
     # Use FunctionService to list and describe all functions
@@ -837,18 +777,9 @@ async def list_and_describe_all_functions(
         catalog, schema, workspace
     )
 
-    # Check token count before formatting final response
-    temp_response = json.dumps(result, separators=(",", ":"))
-    token_count = count_tokens(temp_response)
-
-    if token_count > MAX_RESPONSE_TOKENS:
-        # Create chunked response for large function lists
-        chunked_response = create_chunked_response(result)
-        return json.dumps(chunked_response, indent=2, separators=(",", ":"))
-
-    # Format the response
-    final_data = json.dumps(result, indent=2, separators=(",", ":"))
-    return "\n---\n".join([final_data])
+    # AIDEV-NOTE: ResponseManager automatically handles token checking and chunking
+    formatted_result = _response_manager.format_response(result)
+    return "\n---\n".join([formatted_result])
 
 
 def main():

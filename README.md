@@ -8,7 +8,9 @@ A Model Context Protocol (MCP) server for Databricks Unity Catalog exploration w
 - Multi-workspace support
 - SQL query execution with automatic response chunking
 - Unity Catalog exploration (catalogs, schemas, tables, columns)
-- Token-aware response management (9000 token limit per response)
+- Centralized response management with automatic token validation
+- Smart response chunking (9000 token limit per response)
+- Consistent error formatting across all tools
 - User-defined function (UDF) management
 - 13 comprehensive MCP tools
 
@@ -144,6 +146,13 @@ databricks-tools-clean/
       security/
          __init__.py
          role_manager.py  # Role-based access control manager (US-1.3)
+      services/
+         __init__.py
+         catalog_service.py  # Catalog operations service (US-3.1)
+         table_service.py    # Table operations service (US-3.2)
+         function_service.py # UDF operations service (US-3.3)
+         chunking_service.py # Response chunking service (US-4.1)
+         response_manager.py # Response formatting manager (US-4.2)
    tests/
       test_config/
          __init__.py
@@ -157,6 +166,13 @@ databricks-tools-clean/
       test_security/
          __init__.py
          test_role_manager.py # Role manager tests (21 tests, 92% coverage)
+      test_services/
+         __init__.py
+         test_catalog_service.py  # Catalog service tests (30 tests, 100% coverage)
+         test_table_service.py    # Table service tests (41 tests, 100% coverage)
+         test_function_service.py # Function service tests (36 tests, 100% coverage)
+         test_chunking_service.py # Chunking service tests (30 tests, 100% coverage)
+         test_response_manager.py # Response manager tests (39 tests, 100% coverage)
    .github/workflows/
       ci.yml              # CI/CD pipeline
       claude-code.yml     # Claude Code integration
