@@ -80,7 +80,9 @@ def mock_token_counter() -> MagicMock:
 
 
 @pytest.fixture
-def table_service(mock_query_executor: MagicMock, mock_token_counter: MagicMock) -> TableService:
+def table_service(
+    mock_query_executor: MagicMock, mock_token_counter: MagicMock
+) -> TableService:
     """Create a TableService with mocked dependencies.
 
     Returns:
@@ -120,7 +122,12 @@ def sample_columns_df() -> pd.DataFrame:
         {
             "col_name": ["id", "name", "email", "created_at"],
             "data_type": ["bigint", "string", "string", "timestamp"],
-            "comment": ["Customer ID", "Customer name", "Email address", "Created timestamp"],
+            "comment": [
+                "Customer ID",
+                "Customer name",
+                "Email address",
+                "Created timestamp",
+            ],
         }
     )
 
@@ -373,7 +380,9 @@ class TestTableServiceListTables:
         mock_query_executor.execute_query.return_value = sample_tables_df
 
         # Act
-        result = table_service.list_tables("analytics", ["reports"], workspace="production")
+        result = table_service.list_tables(
+            "analytics", ["reports"], workspace="production"
+        )
 
         # Assert
         assert isinstance(result, dict)
@@ -855,7 +864,9 @@ class TestTableServiceGetTableRowCount:
         This extends test case 11 with edge cases.
         """
         # Test with row count of 1
-        mock_query_executor.execute_query.return_value = pd.DataFrame({"row_count": [1]})
+        mock_query_executor.execute_query.return_value = pd.DataFrame(
+            {"row_count": [1]}
+        )
         result = table_service.get_table_row_count("main", "default", "single_row")
         pages = result["estimated_pages"]
         assert pages["pages_with_50_rows"] == 1
@@ -863,7 +874,9 @@ class TestTableServiceGetTableRowCount:
         assert pages["pages_with_1000_rows"] == 1
 
         # Test with row count exactly 100
-        mock_query_executor.execute_query.return_value = pd.DataFrame({"row_count": [100]})
+        mock_query_executor.execute_query.return_value = pd.DataFrame(
+            {"row_count": [100]}
+        )
         result = table_service.get_table_row_count("main", "default", "exactly_100")
         pages = result["estimated_pages"]
         assert pages["pages_with_50_rows"] == 2  # (100 + 49) // 50 = 2
@@ -932,7 +945,9 @@ class TestTableServiceGetTableDetails:
         mock_query_executor.execute_query.return_value = sample_table_data_df
 
         # Act
-        result = table_service.get_table_details("main", "default", "customers", limit=100)
+        result = table_service.get_table_details(
+            "main", "default", "customers", limit=100
+        )
 
         # Assert
         assert result["table_name"] == "main.default.customers"
@@ -960,7 +975,9 @@ class TestTableServiceGetTableDetails:
         mock_query_executor.execute_query.return_value = sample_table_data_df
 
         # Act
-        result = table_service.get_table_details("main", "default", "small_table", limit=None)
+        result = table_service.get_table_details(
+            "main", "default", "small_table", limit=None
+        )
 
         # Assert
         assert result["table_name"] == "main.default.small_table"
@@ -1117,7 +1134,9 @@ class TestTableServiceErrorHandling:
         )
 
         # Act & Assert
-        with pytest.raises(DatabricksError, match="Table 'main.default.nonexistent' not found"):
+        with pytest.raises(
+            DatabricksError, match="Table 'main.default.nonexistent' not found"
+        ):
             table_service.list_columns("main", "default", ["nonexistent"])
 
         # Verify QueryExecutor was called
@@ -1139,7 +1158,9 @@ class TestTableServiceErrorHandling:
         )
 
         # Act & Assert
-        with pytest.raises(DatabricksError, match="Table 'main.default.missing' not found"):
+        with pytest.raises(
+            DatabricksError, match="Table 'main.default.missing' not found"
+        ):
             table_service.get_table_row_count("main", "default", "missing")
 
     def test_get_table_details_error_propagation(
@@ -1178,7 +1199,9 @@ class TestTableServiceErrorHandling:
         )
 
         # Act & Assert
-        with pytest.raises(DatabricksError, match="Table 'main.default.invalid_table' not found"):
+        with pytest.raises(
+            DatabricksError, match="Table 'main.default.invalid_table' not found"
+        ):
             table_service.get_table_details("main", "default", "invalid_table")
 
     def test_list_tables_workspace_not_found(
@@ -1198,7 +1221,9 @@ class TestTableServiceErrorHandling:
         )
 
         # Act & Assert
-        with pytest.raises(ValueError, match="Workspace 'nonexistent' configuration not found"):
+        with pytest.raises(
+            ValueError, match="Workspace 'nonexistent' configuration not found"
+        ):
             table_service.list_tables("main", ["default"], workspace="nonexistent")
 
     def test_list_columns_workspace_not_found(
@@ -1218,8 +1243,12 @@ class TestTableServiceErrorHandling:
         )
 
         # Act & Assert
-        with pytest.raises(ValueError, match="Workspace 'nonexistent' configuration not found"):
-            table_service.list_columns("main", "default", ["customers"], workspace="nonexistent")
+        with pytest.raises(
+            ValueError, match="Workspace 'nonexistent' configuration not found"
+        ):
+            table_service.list_columns(
+                "main", "default", ["customers"], workspace="nonexistent"
+            )
 
 
 # =============================================================================
@@ -1429,7 +1458,9 @@ class TestTableServiceEdgeCases:
         mock_query_executor.execute_query.return_value = sample_columns_df
 
         # Act
-        result = table_service.list_columns("main", "default", ["customers"], workspace=None)
+        result = table_service.list_columns(
+            "main", "default", ["customers"], workspace=None
+        )
 
         # Assert
         assert len(result["customers"]) == 4

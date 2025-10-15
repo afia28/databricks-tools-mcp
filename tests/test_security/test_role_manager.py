@@ -133,7 +133,9 @@ class TestAnalystStrategy:
         assert analyst_strategy.can_access_workspace("staging") is False
         assert analyst_strategy.can_access_workspace("test") is False
 
-    def test_analyst_strategy_case_sensitive(self, analyst_strategy: AnalystStrategy) -> None:
+    def test_analyst_strategy_case_sensitive(
+        self, analyst_strategy: AnalystStrategy
+    ) -> None:
         """Test analyst workspace access is case-sensitive.
 
         Verifies that only exact "default" matches return True,
@@ -143,7 +145,9 @@ class TestAnalystStrategy:
         assert analyst_strategy.can_access_workspace("DEFAULT") is False
         assert analyst_strategy.can_access_workspace("Default") is False
 
-    def test_analyst_strategy_filter_workspaces(self, analyst_strategy: AnalystStrategy) -> None:
+    def test_analyst_strategy_filter_workspaces(
+        self, analyst_strategy: AnalystStrategy
+    ) -> None:
         """Test analyst workspace filtering.
 
         Verifies:
@@ -175,7 +179,9 @@ class TestDeveloperStrategy:
     configured workspaces.
     """
 
-    def test_developer_strategy_all_workspaces(self, developer_strategy: DeveloperStrategy) -> None:
+    def test_developer_strategy_all_workspaces(
+        self, developer_strategy: DeveloperStrategy
+    ) -> None:
         """Test developer can access all workspaces.
 
         Verifies:
@@ -227,7 +233,9 @@ class TestRoleManager:
     based on the user's role.
     """
 
-    def test_role_manager_analyst_initialization(self, analyst_manager: RoleManager) -> None:
+    def test_role_manager_analyst_initialization(
+        self, analyst_manager: RoleManager
+    ) -> None:
         """Test RoleManager creates AnalystStrategy for analyst role.
 
         Verifies:
@@ -238,7 +246,9 @@ class TestRoleManager:
         assert analyst_manager.role == Role.ANALYST
         assert isinstance(analyst_manager._strategy, AnalystStrategy)
 
-    def test_role_manager_developer_initialization(self, developer_manager: RoleManager) -> None:
+    def test_role_manager_developer_initialization(
+        self, developer_manager: RoleManager
+    ) -> None:
         """Test RoleManager creates DeveloperStrategy for developer role.
 
         Verifies:
@@ -313,7 +323,9 @@ class TestRoleManager:
         assert "admin" in error_message
         assert "analyst" in error_message or "developer" in error_message
 
-    def test_role_manager_can_access_workspace_analyst(self, analyst_manager: RoleManager) -> None:
+    def test_role_manager_can_access_workspace_analyst(
+        self, analyst_manager: RoleManager
+    ) -> None:
         """Test analyst manager workspace access through delegation.
 
         Verifies:
@@ -340,7 +352,9 @@ class TestRoleManager:
         assert developer_manager.can_access_workspace("dev") is True
         assert developer_manager.can_access_workspace("anything") is True
 
-    def test_role_manager_filter_workspaces_analyst(self, analyst_manager: RoleManager) -> None:
+    def test_role_manager_filter_workspaces_analyst(
+        self, analyst_manager: RoleManager
+    ) -> None:
         """Test analyst manager workspace filtering through delegation.
 
         Verifies:
@@ -354,7 +368,9 @@ class TestRoleManager:
         workspaces_no_default = ["production", "dev"]
         assert analyst_manager.filter_workspaces(workspaces_no_default) == []
 
-    def test_role_manager_filter_workspaces_developer(self, developer_manager: RoleManager) -> None:
+    def test_role_manager_filter_workspaces_developer(
+        self, developer_manager: RoleManager
+    ) -> None:
         """Test developer manager workspace filtering through delegation.
 
         Verifies:
@@ -380,7 +396,9 @@ class TestRoleManager:
         assert analyst_manager.normalize_workspace_request(None) is None
         assert analyst_manager.normalize_workspace_request("default") is None
 
-    def test_role_manager_normalize_developer(self, developer_manager: RoleManager) -> None:
+    def test_role_manager_normalize_developer(
+        self, developer_manager: RoleManager
+    ) -> None:
         """Test developer manager preserves workspace requests.
 
         Verifies:
@@ -389,7 +407,9 @@ class TestRoleManager:
         - normalize_workspace_request(None) returns None
         - Developers get exactly what they request
         """
-        assert developer_manager.normalize_workspace_request("production") == "production"
+        assert (
+            developer_manager.normalize_workspace_request("production") == "production"
+        )
         assert developer_manager.normalize_workspace_request("dev") == "dev"
         assert developer_manager.normalize_workspace_request("staging") == "staging"
         assert developer_manager.normalize_workspace_request(None) is None

@@ -205,7 +205,9 @@ class TestQueryExecutorBasicQueries:
 
         # Assert
         assert isinstance(result, pd.DataFrame)
-        mock_workspace_manager.get_workspace_config.assert_called_once_with("production")
+        mock_workspace_manager.get_workspace_config.assert_called_once_with(
+            "production"
+        )
         mock_conn_mgr.assert_called_once_with(prod_config)
 
     @patch("databricks_tools.core.query_executor.ConnectionManager")
@@ -385,7 +387,9 @@ class TestQueryExecutorErrorHandling:
         executor = QueryExecutor(mock_workspace_manager)
 
         # Act & Assert
-        with pytest.raises(ValueError, match="Workspace 'nonexistent' configuration not found"):
+        with pytest.raises(
+            ValueError, match="Workspace 'nonexistent' configuration not found"
+        ):
             executor.execute_query("SELECT 1", workspace="nonexistent")
 
 
@@ -512,7 +516,9 @@ class TestQueryExecutorWithCatalog:
 
         # Assert
         assert isinstance(result, pd.DataFrame)
-        mock_workspace_manager.get_workspace_config.assert_called_once_with("production")
+        mock_workspace_manager.get_workspace_config.assert_called_once_with(
+            "production"
+        )
         mock_conn_mgr.assert_called_once_with(prod_config)
 
     @patch("databricks_tools.core.query_executor.ConnectionManager")
@@ -654,8 +660,12 @@ class TestQueryExecutorIntegration:
         executor = QueryExecutor(mock_workspace_manager)
 
         # Act
-        with patch("databricks_tools.core.query_executor.ConnectionManager") as mock_conn_mgr:
-            with patch("databricks_tools.core.query_executor.pd.read_sql") as mock_read_sql:
+        with patch(
+            "databricks_tools.core.query_executor.ConnectionManager"
+        ) as mock_conn_mgr:
+            with patch(
+                "databricks_tools.core.query_executor.pd.read_sql"
+            ) as mock_read_sql:
                 mock_conn = MagicMock()
                 mock_conn_mgr.return_value.__enter__.return_value = mock_conn
                 mock_read_sql.return_value = pd.DataFrame({"value": [1]})
@@ -848,7 +858,9 @@ class TestQueryExecutorEdgeCases:
         query_executor.execute_query("SELECT 1", parse_dates=None)
 
         # Assert
-        mock_read_sql.assert_called_once_with("SELECT 1", mock_connection, parse_dates=None)
+        mock_read_sql.assert_called_once_with(
+            "SELECT 1", mock_connection, parse_dates=None
+        )
 
     @patch("databricks_tools.core.query_executor.ConnectionManager")
     def test_query_executor_catalog_no_description(

@@ -56,7 +56,9 @@ class FunctionService:
         self.token_counter = token_counter
         self.max_tokens = max_tokens
 
-    def list_user_functions(self, catalog: str, schema: str, workspace: str | None = None) -> dict:
+    def list_user_functions(
+        self, catalog: str, schema: str, workspace: str | None = None
+    ) -> dict:
         """List all user-defined functions in catalog.schema.
 
         Executes SHOW USER FUNCTIONS query and returns a list of function names.
@@ -255,7 +257,9 @@ class FunctionService:
             func_name = func.split(".")[-1]
 
             try:
-                describe_query = f"DESCRIBE FUNCTION EXTENDED {catalog}.{schema}.{func_name}"
+                describe_query = (
+                    f"DESCRIBE FUNCTION EXTENDED {catalog}.{schema}.{func_name}"
+                )
                 desc_df = self.query_executor.execute_query_with_catalog(
                     catalog, describe_query, workspace
                 )
@@ -309,12 +313,16 @@ class FunctionService:
                 if desc_line.startswith("Configs:"):
                     skip_configs = True
                     continue
-                elif desc_line.startswith("Owner:") or desc_line.startswith("Create Time:"):
+                elif desc_line.startswith("Owner:") or desc_line.startswith(
+                    "Create Time:"
+                ):
                     continue
                 elif skip_configs and desc_line.startswith("               "):
                     # Skip config lines (they are indented with many spaces)
                     continue
-                elif desc_line.startswith("Deterministic:") or desc_line.startswith("Data Access:"):
+                elif desc_line.startswith("Deterministic:") or desc_line.startswith(
+                    "Data Access:"
+                ):
                     skip_configs = False  # These come after configs, so stop skipping
 
                 # Add lines we want to keep

@@ -65,3 +65,8 @@ ignore = ["E501"]  # Line length handled by formatter
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[dependency-groups]
+dev = [
+    "freezegun>=1.5.5",
+]

@@ -1,8 +1,6 @@
 import argparse
 import json
 import os
-import uuid
-from datetime import datetime
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -13,6 +11,7 @@ from databricks_tools.core.query_executor import QueryExecutor
 from databricks_tools.core.token_counter import TokenCounter
 from databricks_tools.security.role_manager import Role, RoleManager
 from databricks_tools.services.catalog_service import CatalogService
+from databricks_tools.services.chunking_service import ChunkingService
 from databricks_tools.services.function_service import FunctionService
 from databricks_tools.services.table_service import TableService
 
@@ -42,10 +41,12 @@ _catalog_service = CatalogService(_query_executor, _token_counter, MAX_RESPONSE_
 _table_service = TableService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
 
 # Function service instance
-_function_service = FunctionService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
+_function_service = FunctionService(
+    _query_executor, _token_counter, MAX_RESPONSE_TOKENS
+)
 
-# Chunking session storage (in-memory for now)
-CHUNK_SESSIONS: dict[str, dict] = {}
+# Chunking service instance
+_chunking_service = ChunkingService(_token_counter, MAX_RESPONSE_TOKENS)
 
 
 # Constants and Configuration
@@ -139,96 +140,24 @@ def estimate_response_tokens(data: dict) -> int:
 
 
 def create_chunked_response(data: dict, max_tokens: int = MAX_RESPONSE_TOKENS) -> dict:
-    """
-    Create a chunked response for data that exceeds token limits.
+    """Create a chunked response for data that exceeds token limits.
 
-    Parameters:
-    ----------
-    data : Dict
-        The full response data dictionary.
-    max_tokens : int
-        Maximum tokens allowed per chunk.
+    Legacy wrapper function for backward compatibility with existing code.
+    Uses ChunkingService to handle chunking logic.
+
+    Args:
+        data: The full response data dictionary.
+        max_tokens: Maximum tokens allowed per chunk.
 
     Returns:
-    -------
-    Dict
         Chunked response with session information.
+
+    Example:
+        >>> data = {"data": [...], "schema": {...}}
+        >>> response = create_chunked_response(data)
+        >>> print(response["session_id"])
     """
-    # Generate session ID for this chunked response
-    session_id = str(uuid.uuid4())
-
-    # Extract data rows and metadata
-    rows = data.get("data", [])
-    schema = data.get("schema", {})
-    metadata = {k: v for k, v in data.items() if k not in ["data", "schema"]}
-
-    # Create base response structure
-    base_response = {"schema": schema, **metadata}
-
-    # Calculate how many rows can fit in each chunk
-    base_tokens = estimate_response_tokens(base_response)
-    available_tokens = max_tokens - base_tokens - 500  # Reserve 500 tokens for chunk metadata
-
-    # Estimate tokens per row (using first few rows as sample)
-    if rows:
-        sample_rows = rows[: min(3, len(rows))]
-        sample_tokens = estimate_response_tokens({"data": sample_rows})
-        tokens_per_row = max(1, sample_tokens // len(sample_rows))
-        rows_per_chunk = max(1, available_tokens // tokens_per_row)
-    else:
-        rows_per_chunk = 1
-
-    # Split data into chunks
-    chunks = []
-    total_chunks = (len(rows) + rows_per_chunk - 1) // rows_per_chunk
-
-    for i in range(0, len(rows), rows_per_chunk):
-        chunk_rows = rows[i : i + rows_per_chunk]
-        chunk_number = (i // rows_per_chunk) + 1
-
-        chunk_response = {
-            **base_response,
-            "data": chunk_rows,
-            "chunking_info": {
-                "session_id": session_id,
-                "chunk_number": chunk_number,
-                "total_chunks": total_chunks,
-                "rows_in_chunk": len(chunk_rows),
-                "total_rows": len(rows),
-                "is_chunked": True,
-                "reconstruction_instructions": (
-                    "This response is chunked due to token limits. "
-                    f"Collect all {total_chunks} chunks with session_id '{session_id}' "
-                    "and combine the 'data' arrays to reconstruct the full dataset."
-                ),
-            },
-        }
-        chunks.append(chunk_response)
-
-    # Calculate token counts for each chunk
-    chunk_token_amounts = {}
-    for i, chunk in enumerate(chunks):
-        chunk_number = i + 1
-        chunk_tokens = estimate_response_tokens(chunk)
-        chunk_token_amounts[str(chunk_number)] = chunk_tokens
-
-    # Store session info
-    CHUNK_SESSIONS[session_id] = {
-        "chunks": chunks,
-        "created_at": datetime.now(),
-        "total_chunks": total_chunks,
-        "chunks_delivered": 0,
-        "chunk_token_amounts": chunk_token_amounts,
-    }
-
-    return {
-        "chunked_response": True,
-        "session_id": session_id,
-        "total_chunks": total_chunks,
-        "chunk_token_amounts": chunk_token_amounts,
-        "message": f"Response exceeds token limit. Data will be delivered in {total_chunks} chunks.",
-        "instructions": f"Use get_chunk(session_id='{session_id}', chunk_number=N) to retrieve each chunk (1-{total_chunks})",
-    }
+    return _chunking_service.create_chunked_response(data, max_tokens)
 
 
 def databricks_sql_query(
@@ -308,44 +237,33 @@ async def get_chunk(session_id: str, chunk_number: int) -> str:
     str
         JSON-formatted chunk data with metadata.
     """
-    if session_id not in CHUNK_SESSIONS:
-        return json.dumps(
-            {
-                "error": "Session not found",
-                "session_id": session_id,
-                "message": "The specified session ID does not exist or has expired.",
-            },
-            indent=2,
-        )
-
-    session = CHUNK_SESSIONS[session_id]
-    chunks = session["chunks"]
-
-    if chunk_number < 1 or chunk_number > len(chunks):
-        return json.dumps(
-            {
-                "error": "Invalid chunk number",
-                "session_id": session_id,
-                "chunk_number": chunk_number,
-                "total_chunks": len(chunks),
-                "message": f"Chunk number must be between 1 and {len(chunks)}.",
-            },
-            indent=2,
-        )
-
-    # Get the requested chunk (convert to 0-indexed)
-    chunk = chunks[chunk_number - 1]
-
-    # Update delivery tracking
-    session["chunks_delivered"] += 1
-
-    # Add completion status to chunk
-    chunk["chunking_info"]["chunks_delivered"] = session["chunks_delivered"]
-    chunk["chunking_info"]["all_chunks_delivered"] = (
-        session["chunks_delivered"] >= session["total_chunks"]
-    )
-
-    return json.dumps(chunk, indent=2, separators=(",", ":"))
+    try:
+        # Use ChunkingService to get chunk
+        chunk = _chunking_service.get_chunk(session_id, chunk_number)
+        return json.dumps(chunk, indent=2, separators=(",", ":"))
+    except ValueError as e:
+        # Handle session not found or invalid chunk number
+        error_message = str(e)
+        if "Session not found" in error_message:
+            return json.dumps(
+                {
+                    "error": "Session not found",
+                    "session_id": session_id,
+                    "message": "The specified session ID does not exist or has expired.",
+                },
+                indent=2,
+            )
+        else:
+            # Invalid chunk number
+            return json.dumps(
+                {
+                    "error": "Invalid chunk number",
+                    "session_id": session_id,
+                    "chunk_number": chunk_number,
+                    "message": error_message,
+                },
+                indent=2,
+            )
 
 
 @mcp.tool()
@@ -363,7 +281,12 @@ async def get_chunking_session_info(session_id: str) -> str:
     str
         JSON-formatted session information.
     """
-    if session_id not in CHUNK_SESSIONS:
+    try:
+        # Use ChunkingService to get session info
+        session_info = _chunking_service.get_session_info(session_id)
+        return json.dumps(session_info, indent=2)
+    except ValueError:
+        # Handle session not found
         return json.dumps(
             {
                 "error": "Session not found",
@@ -372,31 +295,6 @@ async def get_chunking_session_info(session_id: str) -> str:
             },
             indent=2,
         )
-
-    session = CHUNK_SESSIONS[session_id]
-
-    return json.dumps(
-        {
-            "session_id": session_id,
-            "total_chunks": session["total_chunks"],
-            "chunks_delivered": session["chunks_delivered"],
-            "chunks_remaining": session["total_chunks"] - session["chunks_delivered"],
-            "created_at": session["created_at"].isoformat(),
-            "all_chunks_delivered": session["chunks_delivered"] >= session["total_chunks"],
-            "next_chunk_to_request": (
-                min(session["chunks_delivered"] + 1, session["total_chunks"])
-                if session["chunks_delivered"] < session["total_chunks"]
-                else None
-            ),
-            "chunk_token_amounts": session.get("chunk_token_amounts", {}),
-            "reconstruction_instructions": (
-                f"Use get_chunk(session_id='{session_id}', chunk_number=N) "
-                f"to retrieve chunks 1 through {session['total_chunks']}. "
-                "Combine all 'data' arrays to reconstruct the full dataset."
-            ),
-        },
-        indent=2,
-    )
 
 
 @mcp.tool()
@@ -463,7 +361,9 @@ async def get_table_details(
         If response exceeds token limits, returns chunked response information.
     """
     # Use TableService to get table details
-    result = _table_service.get_table_details(catalog, schema, table_name, limit, workspace)
+    result = _table_service.get_table_details(
+        catalog, schema, table_name, limit, workspace
+    )
 
     # Check token count before formatting final response
     temp_response = json.dumps(result, separators=(",", ":"))
@@ -933,7 +833,9 @@ async def list_and_describe_all_functions(
             )
 
     # Use FunctionService to list and describe all functions
-    result = _function_service.list_and_describe_all_functions(catalog, schema, workspace)
+    result = _function_service.list_and_describe_all_functions(
+        catalog, schema, workspace
+    )
 
     # Check token count before formatting final response
     temp_response = json.dumps(result, separators=(",", ":"))
@@ -951,13 +853,7 @@ async def list_and_describe_all_functions(
 
 def main():
     """Main entry point for the databricks-tools MCP server."""
-    global \
-        _role_manager, \
-        _workspace_manager, \
-        _query_executor, \
-        _catalog_service, \
-        _table_service, \
-        _function_service
+    global _role_manager, _workspace_manager, _query_executor, _catalog_service, _table_service, _function_service
 
     # Parse command-line arguments for role-based access control
     parser = argparse.ArgumentParser(description="Databricks MCP Server")
@@ -977,11 +873,17 @@ def main():
         # Reinitialize query executor with updated workspace manager
         _query_executor = QueryExecutor(_workspace_manager)
         # Reinitialize catalog service with updated query executor
-        _catalog_service = CatalogService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
+        _catalog_service = CatalogService(
+            _query_executor, _token_counter, MAX_RESPONSE_TOKENS
+        )
         # Reinitialize table service with updated query executor
-        _table_service = TableService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
+        _table_service = TableService(
+            _query_executor, _token_counter, MAX_RESPONSE_TOKENS
+        )
         # Reinitialize function service with updated query executor
-        _function_service = FunctionService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
+        _function_service = FunctionService(
+            _query_executor, _token_counter, MAX_RESPONSE_TOKENS
+        )
 
     # Initialize and run the server
     mcp.run(transport="stdio")
