@@ -55,7 +55,7 @@ env:
     value: "/sql/1.0/warehouses/default-id"
   - name: "DATABRICKS_ACCESS_TOKEN"
     valueFrom: "databricks_access_token"
-  
+
   # Production workspace (optional)
   - name: "PRODUCTION_DATABRICKS_SERVER_HOSTNAME"
     value: "production.cloud.databricks.com"
@@ -79,7 +79,7 @@ env:
 - No errors thrown - seamless operation for non-technical users
 - Example: `run_query("SELECT * FROM table", workspace="production")` → Uses default workspace
 
-### Developer Mode  
+### Developer Mode
 - **Workspace parameters are respected**
 - If workspace not found, falls back to default with a warning
 - Example: `run_query("SELECT * FROM table", workspace="production")` → Uses production workspace

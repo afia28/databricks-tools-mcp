@@ -55,7 +55,7 @@ When creating tests, you will:
 ```python
 def test_descriptive_name_explains_scenario():
     """Test that [specific behavior] when [specific condition].
-    
+
     This test validates [detailed explanation of what and why].
     """
     # Arrange: Set up test data and mocks

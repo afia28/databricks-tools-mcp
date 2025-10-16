@@ -22,7 +22,10 @@ def mock_container():
 
     # Mock workspace_manager
     container.workspace_manager = MagicMock()
-    container.workspace_manager.get_available_workspaces.return_value = ["default", "production"]
+    container.workspace_manager.get_available_workspaces.return_value = [
+        "default",
+        "production",
+    ]
     container.workspace_manager.get_workspace_config.return_value = MagicMock(
         server_hostname="test.databricks.com",
         http_path="/sql/1.0/warehouses/test",
@@ -522,7 +525,10 @@ class TestListUserFunctions:
         with patch("databricks_tools.server._container", mock_container):
             with patch.dict(
                 "os.environ",
-                {"DATABRICKS_DEFAULT_CATALOG": "main", "DATABRICKS_DEFAULT_SCHEMA": "default"},
+                {
+                    "DATABRICKS_DEFAULT_CATALOG": "main",
+                    "DATABRICKS_DEFAULT_SCHEMA": "default",
+                },
             ):
                 from databricks_tools.server import list_user_functions
 
@@ -659,7 +665,10 @@ class TestListAndDescribeAllFunctions:
         with patch("databricks_tools.server._container", mock_container):
             with patch.dict(
                 "os.environ",
-                {"DATABRICKS_DEFAULT_CATALOG": "main", "DATABRICKS_DEFAULT_SCHEMA": "default"},
+                {
+                    "DATABRICKS_DEFAULT_CATALOG": "main",
+                    "DATABRICKS_DEFAULT_SCHEMA": "default",
+                },
             ):
                 from databricks_tools.server import list_and_describe_all_functions
 
