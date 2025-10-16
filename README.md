@@ -194,10 +194,85 @@ databricks-tools-clean/
    ROLES.md                # Role documentation
 ```
 
+## Architecture
+
+This project follows clean architecture principles with a modular, type-safe design. See [ARCHITECTURE.md](ARCHITECTURE.md) for comprehensive documentation.
+
+### Design Patterns
+
+The codebase implements several well-established design patterns:
+
+- **Repository Pattern** (`QueryExecutor`) - Abstracts database access and provides clean data operations interface
+- **Strategy Pattern** (`RoleManager`) - Implements role-based access control with interchangeable strategies (AnalystStrategy, DeveloperStrategy)
+- **Factory Pattern** (`WorkspaceConfig.from_env`) - Encapsulates complex object creation from environment variables
+- **Dependency Injection** (`ApplicationContainer`) - Wires all dependencies and eliminates global state
+- **Service Layer Pattern** - Business logic organized into focused service classes (CatalogService, TableService, FunctionService, ChunkingService, ResponseManager)
+- **Context Manager Protocol** (`ConnectionManager`) - Ensures safe resource management for database connections
+
+### Component Overview
+
+```
+MCP Client → Server (13 Tools) → ApplicationContainer → Services → Core → Databricks
+```
+
+**Layers:**
+- **MCP Server** - 13 tools exposing functionality via Model Context Protocol
+- **Application Container** - Dependency injection container wiring all services
+- **Service Layer** - Business logic (catalog, table, function, chunking, response services)
+- **Core Services** - Token counting, connection management, query execution
+- **Security Layer** - Role-based access control with strategy pattern
+- **Configuration** - Pydantic models for type-safe configuration
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed diagrams and data flow documentation.
+
+## Usage Examples
+
+The `examples/` directory contains comprehensive usage examples:
+
+- **[basic_usage.py](examples/basic_usage.py)** - Simple operations, error handling, workspace configuration
+- **[advanced_queries.py](examples/advanced_queries.py)** - Complex SQL, multi-workspace queries, response chunking
+- **[custom_service.py](examples/custom_service.py)** - Creating custom services with dependency injection
+- **[testing_example.py](examples/testing_example.py)** - Testing patterns, mocking, fixtures, coverage strategies
+
+### Quick Example: Listing Catalogs
+
+```python
+from databricks_tools.core.container import ApplicationContainer
+from databricks_tools.security.role_manager import Role
+
+# Create application container
+container = ApplicationContainer(role=Role.ANALYST)
+
+# List all catalogs
+catalogs = container.catalog_service.list_catalogs()
+print(f"Available catalogs: {catalogs['catalogs']}")
+```
+
+### Quick Example: Running Queries
+
+```python
+from databricks_tools.core.container import ApplicationContainer
+
+# Create container
+container = ApplicationContainer()
+
+# Execute SQL query
+result_df = container.query_executor.execute_query(
+    "SELECT * FROM main.default.my_table LIMIT 10"
+)
+
+print(result_df)
+```
+
+See [examples/](examples/) for more comprehensive examples.
+
 ## Documentation
 
-- [CLAUDE.md](.claude/CLAUDE.md) - Development guide for Claude Code
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Architecture documentation with design patterns and diagrams
+- [CLAUDE.md](CLAUDE.md) - Development guide for Claude Code
 - [ROLES.md](ROLES.md) - Role-based access control details
+- [CHANGELOG.md](CHANGELOG.md) - Version history and release notes
+- [examples/](examples/) - Usage examples and patterns
 - `.env.example` - Configuration options
 
 ## Security
