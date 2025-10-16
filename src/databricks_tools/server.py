@@ -2,177 +2,19 @@ import argparse
 import json
 import os
 
-import pandas as pd
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 from databricks_tools.core.container import ApplicationContainer
-from databricks_tools.core.token_counter import TokenCounter
 from databricks_tools.security.role_manager import Role
 
 # Initialize FastMCP server
 load_dotenv()
 mcp = FastMCP("databricks_sql")
 
-# Token limit constant
-MAX_RESPONSE_TOKENS = 9000  # MCP server limit is 25,000, keep 1,000 token buffer
-
 # AIDEV-NOTE: ApplicationContainer provides dependency injection for all services
 # Default role is ANALYST (default workspace only). Use --developer flag for all workspaces.
-_container = ApplicationContainer(role=Role.ANALYST, max_tokens=MAX_RESPONSE_TOKENS)
-
-
-# Constants and Configuration
-def get_workspace_config(workspace: str | None = None) -> dict[str, str]:
-    """Get configuration for a specific workspace.
-
-    Legacy wrapper around WorkspaceConfigManager for backward compatibility.
-    This function maintains the original dict-based return type while using
-    the new WorkspaceConfigManager internally.
-
-    Parameters:
-    ----------
-    workspace : str, optional
-        The workspace name (e.g., 'production', 'dev', 'staging').
-        - In ANALYST mode: This parameter is ignored, always uses default workspace.
-        - In DEVELOPER mode: If None or not found, falls back to default workspace.
-
-    Returns:
-    -------
-    Dict[str, str]
-        Dictionary containing server_hostname, http_path, and access_token.
-
-    Raises:
-    ------
-    ValueError
-        If no workspace configuration is found.
-    """
-    # Use WorkspaceConfigManager to get configuration
-    config = _container.workspace_manager.get_workspace_config(workspace)
-
-    # Convert WorkspaceConfig to dict for backward compatibility
-    return {
-        "server_hostname": config.server_hostname,
-        "http_path": config.http_path,
-        "access_token": config.access_token.get_secret_value(),  # Extract from SecretStr
-    }
-
-
-def get_available_workspaces() -> list[str]:
-    """Get a list of configured workspaces based on environment variables.
-
-    Legacy wrapper around WorkspaceConfigManager for backward compatibility.
-
-    Returns:
-    -------
-    List[str]
-        List of available workspace names.
-    """
-    # Use WorkspaceConfigManager to get available workspaces
-    return _container.workspace_manager.get_available_workspaces()
-
-
-def count_tokens(text: str, model: str = "gpt-4") -> int:
-    """Count tokens in text using TokenCounter utility.
-
-    Legacy wrapper function for backward compatibility with existing code.
-
-    Args:
-        text: The text to count tokens in.
-        model: The model to use for counting (default "gpt-4").
-
-    Returns:
-        The number of tokens in the text.
-
-    Example:
-        >>> count_tokens("Hello, world!")
-        4
-    """
-    if model != "gpt-4":
-        counter = TokenCounter(model=model)
-        return counter.count_tokens(text)
-    return _container.token_counter.count_tokens(text)
-
-
-def estimate_response_tokens(data: dict) -> int:
-    """Estimate tokens in a response dict using TokenCounter utility.
-
-    Legacy wrapper function for backward compatibility with existing code.
-
-    Args:
-        data: The dictionary to estimate tokens for.
-
-    Returns:
-        The estimated number of tokens.
-
-    Example:
-        >>> estimate_response_tokens({"key": "value"})
-        7
-    """
-    return _container.token_counter.estimate_tokens(data)
-
-
-def create_chunked_response(data: dict, max_tokens: int = MAX_RESPONSE_TOKENS) -> dict:
-    """Create a chunked response for data that exceeds token limits.
-
-    Legacy wrapper function for backward compatibility with existing code.
-    Uses ChunkingService to handle chunking logic.
-
-    Args:
-        data: The full response data dictionary.
-        max_tokens: Maximum tokens allowed per chunk.
-
-    Returns:
-        Chunked response with session information.
-
-    Example:
-        >>> data = {"data": [...], "schema": {...}}
-        >>> response = create_chunked_response(data)
-        >>> print(response["session_id"])
-    """
-    return _container.chunking_service.create_chunked_response(data, max_tokens)
-
-
-def databricks_sql_query(
-    query: str, parse_dates: list[str] | None = None, workspace: str | None = None
-) -> pd.DataFrame:
-    """Execute SQL query using QueryExecutor service.
-
-    Legacy wrapper function for backward compatibility with existing code.
-
-    Args:
-        query: SQL query string to execute.
-        parse_dates: Optional list of column names to parse as dates.
-        workspace: Optional workspace name.
-
-    Returns:
-        pandas DataFrame with query results.
-
-    Example:
-        >>> df = databricks_sql_query("SELECT 1 as value")
-    """
-    return _container.query_executor.execute_query(query, workspace, parse_dates)
-
-
-def databricks_sql_query_with_catalog(
-    catalog: str, query: str, workspace: str | None = None
-) -> pd.DataFrame:
-    """Execute query with catalog context using QueryExecutor service.
-
-    Legacy wrapper function for backward compatibility with existing code.
-
-    Args:
-        catalog: Catalog name to set as context.
-        query: SQL query string to execute.
-        workspace: Optional workspace name.
-
-    Returns:
-        pandas DataFrame with query results.
-
-    Example:
-        >>> df = databricks_sql_query_with_catalog("my_catalog", "SELECT * FROM my_table")
-    """
-    return _container.query_executor.execute_query_with_catalog(catalog, query, workspace)
+_container = ApplicationContainer(role=Role.ANALYST, max_tokens=9000)
 
 
 @mcp.tool()
@@ -353,7 +195,8 @@ async def run_query(query: str, workspace: str | None = None) -> str:
         A JSON-formatted string containing the result data.
         If response exceeds token limits, returns chunked response information.
     """
-    df = databricks_sql_query(query, workspace=workspace)
+    # Execute query directly using container's query executor
+    df = _container.query_executor.execute_query(query, workspace, None)
 
     # Convert DataFrame to result format
     df_json = json.loads(df.to_json(orient="table", index=False))
@@ -481,11 +324,11 @@ async def list_tables(catalog: str, schemas: list, workspace: str | None = None)
     token_count = _container.token_counter.count_tokens(temp_response)
 
     # AIDEV-NOTE: list_tables doesn't support chunking (no 'data' key), so return error for large responses
-    if token_count > MAX_RESPONSE_TOKENS:
+    if token_count > 9000:
         # Return error with guidance
         error_response = _container.response_manager.format_error(
             "Response too large",
-            f"Response would be {token_count} tokens (limit: {MAX_RESPONSE_TOKENS})",
+            f"Response would be {token_count} tokens (limit: 9000)",
             catalog=catalog,
             schemas_requested=len(schemas),
             suggestions=[
@@ -533,11 +376,11 @@ async def list_columns(
     token_count = _container.token_counter.count_tokens(temp_response)
 
     # AIDEV-NOTE: list_columns doesn't support chunking (no 'data' key), so return error for large responses
-    if token_count > MAX_RESPONSE_TOKENS:
+    if token_count > 9000:
         # Return error with guidance for large responses
         error_response = _container.response_manager.format_error(
             "Response too large",
-            f"Response would be {token_count} tokens (limit: {MAX_RESPONSE_TOKENS})",
+            f"Response would be {token_count} tokens (limit: 9000)",
             catalog=catalog,
             schema=schema,
             tables_requested=len(tables),
@@ -603,11 +446,11 @@ async def list_user_functions(
     token_count = _container.token_counter.count_tokens(temp_response)
 
     # AIDEV-NOTE: list_user_functions doesn't support chunking, so return error for large responses
-    if token_count > MAX_RESPONSE_TOKENS:
+    if token_count > 9000:
         # Return error with guidance
         error_response = _container.response_manager.format_error(
             "Response too large",
-            f"Response would be {token_count} tokens (limit: {MAX_RESPONSE_TOKENS})",
+            f"Response would be {token_count} tokens (limit: 9000)",
             catalog=catalog,
             schema=schema,
             function_count=result.get("function_count", 0),
@@ -763,7 +606,7 @@ def main():
 
     # AIDEV-NOTE: Recreate ApplicationContainer with DEVELOPER role if --developer flag is set
     if args.developer:
-        _container = ApplicationContainer(role=Role.DEVELOPER, max_tokens=MAX_RESPONSE_TOKENS)
+        _container = ApplicationContainer(role=Role.DEVELOPER, max_tokens=9000)
 
     # Initialize and run the server
     mcp.run(transport="stdio")

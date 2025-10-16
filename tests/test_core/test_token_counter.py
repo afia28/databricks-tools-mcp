@@ -7,7 +7,6 @@ This module contains comprehensive tests for the TokenCounter class, covering:
 - Encoding cache behavior (@lru_cache verification)
 - Fallback to cl100k_base for unknown models
 - Different model support (gpt-4, gpt-3.5-turbo, etc.)
-- Wrapper function integration in server.py
 
 Test coverage goal: 100% for src/databricks_tools/core/token_counter.py
 """
@@ -19,7 +18,6 @@ import pytest
 import tiktoken
 
 from databricks_tools.core.token_counter import TokenCounter
-from databricks_tools.server import count_tokens, estimate_response_tokens
 
 # =============================================================================
 # Fixtures
@@ -504,81 +502,6 @@ class TestDifferentModels:
         # They should be close (within reasonable range)
         # Note: gpt-4 and gpt-3.5-turbo often use same encoding, so may be equal
         assert abs(count_gpt4 - count_gpt35) <= 2
-
-
-# =============================================================================
-# Wrapper Function Tests
-# =============================================================================
-
-
-class TestWrapperFunctions:
-    """Tests for server.py wrapper functions."""
-
-    def test_count_tokens_wrapper_default_model(self):
-        """Test count_tokens wrapper function with default model.
-
-        The wrapper function should delegate to TokenCounter and return
-        correct token counts using the default gpt-4 model.
-        """
-        text = "Hello, world!"
-        token_count = count_tokens(text)
-
-        # Should match TokenCounter with gpt-4
-        counter = TokenCounter(model="gpt-4")
-        expected_count = counter.count_tokens(text)
-
-        assert token_count == expected_count
-        assert token_count > 0
-
-    def test_count_tokens_wrapper_custom_model(self):
-        """Test count_tokens wrapper function with custom model.
-
-        The wrapper should accept a model parameter and create appropriate
-        TokenCounter instance.
-        """
-        text = "Hello, world!"
-        model = "gpt-3.5-turbo"
-        token_count = count_tokens(text, model=model)
-
-        # Should match TokenCounter with specified model
-        counter = TokenCounter(model=model)
-        expected_count = counter.count_tokens(text)
-
-        assert token_count == expected_count
-        assert token_count > 0
-
-    def test_estimate_response_tokens_wrapper(self, simple_dict: dict[str, str]):
-        """Test estimate_response_tokens wrapper function.
-
-        The wrapper should delegate to TokenCounter.estimate_tokens and
-        return correct token estimates for dictionaries.
-        """
-        token_count = estimate_response_tokens(simple_dict)
-
-        # Should match TokenCounter with gpt-4 (default in server.py)
-        counter = TokenCounter(model="gpt-4")
-        expected_count = counter.estimate_tokens(simple_dict)
-
-        assert token_count == expected_count
-        assert token_count > 0
-
-    def test_wrapper_functions_consistency(self):
-        """Test that wrapper functions provide consistent results.
-
-        Multiple calls should return identical results for same input.
-        """
-        text = "Consistency test"
-        data = {"key": "value", "count": 42}
-
-        # count_tokens wrapper
-        count1 = count_tokens(text)
-        count2 = count_tokens(text)
-        assert count1 == count2
-
-        # estimate_response_tokens wrapper
-        estimate1 = estimate_response_tokens(data)
-        estimate2 = estimate_response_tokens(data)
-        assert estimate1 == estimate2
 
 
 # =============================================================================

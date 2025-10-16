@@ -439,21 +439,19 @@ class TestListTables:
     @pytest.mark.asyncio
     async def test_list_tables_response_too_large(self, mock_container):
         """Test list_tables when response exceeds token limit."""
-        # Make token counter return large count
+        # Make token counter return large count (above hardcoded 9000 limit)
         mock_container.token_counter.count_tokens.return_value = 10000
 
         with patch("databricks_tools.server._container", mock_container):
-            with patch("databricks_tools.server.MAX_RESPONSE_TOKENS", 9000):
-                from databricks_tools.server import list_tables
+            from databricks_tools.server import list_tables
 
-                await list_tables("catalog", ["schema1", "schema2"])
+            await list_tables("catalog", ["schema1", "schema2"])
 
-                # Verify error formatting was called
-                mock_container.response_manager.format_error.assert_called_once()
-                assert (
-                    "Response too large"
-                    in mock_container.response_manager.format_error.call_args[0][0]
-                )
+            # Verify error formatting was called
+            mock_container.response_manager.format_error.assert_called_once()
+            assert (
+                "Response too large" in mock_container.response_manager.format_error.call_args[0][0]
+            )
 
 
 class TestListColumns:
@@ -478,13 +476,12 @@ class TestListColumns:
         mock_container.token_counter.count_tokens.return_value = 10000
 
         with patch("databricks_tools.server._container", mock_container):
-            with patch("databricks_tools.server.MAX_RESPONSE_TOKENS", 9000):
-                from databricks_tools.server import list_columns
+            from databricks_tools.server import list_columns
 
-                await list_columns("catalog", "schema", ["table1"])
+            await list_columns("catalog", "schema", ["table1"])
 
-                # Verify error formatting
-                mock_container.response_manager.format_error.assert_called_once()
+            # Verify error formatting
+            mock_container.response_manager.format_error.assert_called_once()
 
 
 class TestListUserFunctions:
@@ -542,13 +539,12 @@ class TestListUserFunctions:
         mock_container.token_counter.count_tokens.return_value = 10000
 
         with patch("databricks_tools.server._container", mock_container):
-            with patch("databricks_tools.server.MAX_RESPONSE_TOKENS", 9000):
-                from databricks_tools.server import list_user_functions
+            from databricks_tools.server import list_user_functions
 
-                await list_user_functions("catalog", "schema")
+            await list_user_functions("catalog", "schema")
 
-                # Verify error formatting
-                mock_container.response_manager.format_error.assert_called_once()
+            # Verify error formatting
+            mock_container.response_manager.format_error.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_list_user_functions_no_schema(self, mock_container):
@@ -689,99 +685,6 @@ class TestListAndDescribeAllFunctions:
                     "No schema specified"
                     in mock_container.response_manager.format_error.call_args[0][0]
                 )
-
-
-class TestLegacyWrapperFunctions:
-    """Test legacy wrapper functions that delegate to container."""
-
-    def test_get_workspace_config_wrapper(self, mock_container):
-        """Test get_workspace_config wrapper function."""
-        with patch("databricks_tools.server._container", mock_container):
-            from databricks_tools.server import get_workspace_config
-
-            result = get_workspace_config("production")
-
-            # Verify it returns dict format
-            assert isinstance(result, dict)
-            assert "server_hostname" in result
-            assert "http_path" in result
-            assert "access_token" in result
-
-    def test_get_available_workspaces_wrapper(self, mock_container):
-        """Test get_available_workspaces wrapper function."""
-        with patch("databricks_tools.server._container", mock_container):
-            from databricks_tools.server import get_available_workspaces
-
-            result = get_available_workspaces()
-
-            # Verify it delegates to container
-            mock_container.workspace_manager.get_available_workspaces.assert_called_once()
-            assert result == ["default", "production"]
-
-    def test_count_tokens_wrapper_default_model(self, mock_container):
-        """Test count_tokens wrapper with default model."""
-        with patch("databricks_tools.server._container", mock_container):
-            from databricks_tools.server import count_tokens
-
-            count_tokens("test text")
-
-            # Verify it uses container's token counter
-            mock_container.token_counter.count_tokens.assert_called_once_with("test text")
-
-    def test_count_tokens_wrapper_custom_model(self, mock_container):
-        """Test count_tokens wrapper with custom model."""
-        with patch("databricks_tools.server._container", mock_container):
-            from databricks_tools.server import count_tokens
-
-            # Should create new TokenCounter for non-default model
-            count_tokens("test text", model="gpt-3.5-turbo")
-
-            # Verify container token counter was NOT used
-            mock_container.token_counter.count_tokens.assert_not_called()
-
-    def test_estimate_response_tokens_wrapper(self, mock_container):
-        """Test estimate_response_tokens wrapper."""
-        with patch("databricks_tools.server._container", mock_container):
-            from databricks_tools.server import estimate_response_tokens
-
-            estimate_response_tokens({"key": "value"})
-
-            # Verify delegation to container
-            mock_container.token_counter.estimate_tokens.assert_called_once_with({"key": "value"})
-
-    def test_create_chunked_response_wrapper(self, mock_container):
-        """Test create_chunked_response wrapper."""
-        mock_container.chunking_service.create_chunked_response.return_value = {
-            "session_id": "test-id"
-        }
-
-        with patch("databricks_tools.server._container", mock_container):
-            from databricks_tools.server import create_chunked_response
-
-            create_chunked_response({"data": [1, 2, 3]})
-
-            # Verify delegation
-            mock_container.chunking_service.create_chunked_response.assert_called_once()
-
-    def test_databricks_sql_query_wrapper(self, mock_container):
-        """Test databricks_sql_query wrapper."""
-        with patch("databricks_tools.server._container", mock_container):
-            from databricks_tools.server import databricks_sql_query
-
-            databricks_sql_query("SELECT 1")
-
-            # Verify delegation
-            mock_container.query_executor.execute_query.assert_called_once()
-
-    def test_databricks_sql_query_with_catalog_wrapper(self, mock_container):
-        """Test databricks_sql_query_with_catalog wrapper."""
-        with patch("databricks_tools.server._container", mock_container):
-            from databricks_tools.server import databricks_sql_query_with_catalog
-
-            databricks_sql_query_with_catalog("catalog", "SELECT 1")
-
-            # Verify delegation
-            mock_container.query_executor.execute_query_with_catalog.assert_called_once()
 
 
 class TestMainFunction:

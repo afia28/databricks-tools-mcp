@@ -324,52 +324,6 @@ class TestWorkspaceConfigManager:
         assert config.workspace_name == "default"
 
 
-class TestLegacyWrappers:
-    """Integration tests for legacy wrapper functions in server.py.
-
-    These tests ensure that the legacy wrapper functions in server.py correctly
-    integrate with the WorkspaceConfigManager and maintain backward compatibility.
-    """
-
-    def test_legacy_wrappers_in_server(self, default_workspace_env: pytest.MonkeyPatch):
-        """Test legacy wrapper functions work correctly with WorkspaceConfigManager.
-
-        The server.py module should have get_workspace_config() and
-        get_available_workspaces() functions that wrap the WorkspaceConfigManager
-        and return data in the legacy format (dict and list).
-
-        Args:
-            default_workspace_env: Fixture providing default workspace configuration.
-        """
-        # Import after environment is set up to ensure proper initialization
-        # We need to reimport to pick up the test environment
-        import sys
-
-        # Remove the module if already imported to force fresh import
-        if "databricks_tools.server" in sys.modules:
-            del sys.modules["databricks_tools.server"]
-
-        from databricks_tools.server import (
-            get_available_workspaces,
-            get_workspace_config,
-        )
-
-        # Test get_workspace_config returns dict
-        config_dict = get_workspace_config()
-        assert isinstance(config_dict, dict)
-        assert "server_hostname" in config_dict
-        assert "http_path" in config_dict
-        assert "access_token" in config_dict
-        assert config_dict["server_hostname"] == "https://default.databricks.com"
-        assert config_dict["http_path"] == "/sql/1.0/warehouses/default123"
-        assert config_dict["access_token"] == "dapi_default_token_1234567890ab"
-
-        # Test get_available_workspaces returns list
-        workspaces = get_available_workspaces()
-        assert isinstance(workspaces, list)
-        assert "default" in workspaces
-
-
 # ==================== Fixtures ====================
 
 
