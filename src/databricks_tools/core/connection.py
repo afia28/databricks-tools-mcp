@@ -91,7 +91,12 @@ class ConnectionManager:
         )
         return self._connection
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
         """Exit context manager - close database connection.
 
         Automatically closes the connection when exiting the context,

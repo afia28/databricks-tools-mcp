@@ -296,7 +296,7 @@ async def list_schemas(
 
 
 @mcp.tool()
-async def list_tables(catalog: str, schemas: list, workspace: str | None = None) -> str:
+async def list_tables(catalog: str, schemas: list[str], workspace: str | None = None) -> str:
     """
     Lists tables for a given catalog and one or more schemas.
 
@@ -344,7 +344,7 @@ async def list_tables(catalog: str, schemas: list, workspace: str | None = None)
 
 @mcp.tool()
 async def list_columns(
-    catalog: str, schema: str, tables: list, workspace: str | None = None
+    catalog: str, schema: str, tables: list[str], workspace: str | None = None
 ) -> str:
     """
     Lists column names, data types, and descriptions for the given table(s).
@@ -590,7 +590,7 @@ async def list_and_describe_all_functions(
     return "\n---\n".join([formatted_result])
 
 
-def main():
+def main() -> None:
     """Main entry point for the databricks-tools MCP server."""
     global _container
 

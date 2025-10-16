@@ -80,7 +80,7 @@ class CatalogService:
         """
         query = "SHOW CATALOGS"
         df = self.query_executor.execute_query(query, workspace)
-        catalogs = df["catalog"].tolist()
+        catalogs: list[str] = df["catalog"].tolist()
         return catalogs
 
     def list_schemas(

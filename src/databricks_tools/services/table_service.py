@@ -4,6 +4,8 @@ This module provides a TableService class for centralized table-related
 operations with consistent error handling and query execution.
 """
 
+from typing import Any
+
 from databricks_tools.core.query_executor import QueryExecutor
 from databricks_tools.core.token_counter import TokenCounter
 
@@ -100,7 +102,7 @@ class TableService:
         schema: str,
         tables: list[str],
         workspace: str | None = None,
-    ) -> dict[str, list[dict]]:
+    ) -> dict[str, list[dict[str, Any]]]:
         """List columns with metadata for given tables.
 
         For each table, executes DESCRIBE TABLE EXTENDED query and extracts
@@ -162,7 +164,7 @@ class TableService:
         schema: str,
         table_name: str,
         workspace: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Get row count and pagination estimates for a table.
 
         Executes COUNT(*) query and calculates estimated pages for common page sizes.
@@ -229,7 +231,7 @@ class TableService:
         table_name: str,
         limit: int | None = 1000,
         workspace: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Get table schema and sample data.
 
         Executes SELECT query to fetch table schema and sample data.

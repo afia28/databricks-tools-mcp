@@ -6,6 +6,7 @@ in text strings and JSON data structures using tiktoken.
 
 import json
 from functools import lru_cache
+from typing import Any
 
 import tiktoken
 
@@ -92,7 +93,7 @@ class TokenCounter:
         """
         return len(self._encoding.encode(text))
 
-    def estimate_tokens(self, data: dict | list) -> int:
+    def estimate_tokens(self, data: dict[str, Any] | list[Any]) -> int:
         """Estimate tokens in a JSON-serializable data structure.
 
         Converts the data to compact JSON and counts tokens in the result.
@@ -113,7 +114,9 @@ class TokenCounter:
         json_string = json.dumps(data, separators=(",", ":"))
         return self.count_tokens(json_string)
 
-    def estimate_response_tokens(self, data: dict, include_formatting: bool = True) -> int:
+    def estimate_response_tokens(
+        self, data: dict[str, Any], include_formatting: bool = True
+    ) -> int:
         """Estimate tokens for a complete response with optional formatting.
 
         When include_formatting is True, uses indented JSON which is more

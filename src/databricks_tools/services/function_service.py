@@ -4,6 +4,8 @@ This module provides a FunctionService class for centralized user-defined functi
 operations with consistent error handling and query execution.
 """
 
+from typing import Any
+
 import pandas as pd
 
 from databricks_tools.core.query_executor import QueryExecutor
@@ -56,7 +58,9 @@ class FunctionService:
         self.token_counter = token_counter
         self.max_tokens = max_tokens
 
-    def list_user_functions(self, catalog: str, schema: str, workspace: str | None = None) -> dict:
+    def list_user_functions(
+        self, catalog: str, schema: str, workspace: str | None = None
+    ) -> dict[str, Any]:
         """List all user-defined functions in catalog.schema.
 
         Executes SHOW USER FUNCTIONS query and returns a list of function names.
@@ -116,7 +120,7 @@ class FunctionService:
         catalog: str,
         schema: str,
         workspace: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Get detailed function information.
 
         Executes DESCRIBE FUNCTION EXTENDED query and parses the output
@@ -183,7 +187,7 @@ class FunctionService:
 
     def list_and_describe_all_functions(
         self, catalog: str, schema: str, workspace: str | None = None
-    ) -> dict:
+    ) -> dict[str, Any]:
         """List and describe all functions in catalog.schema.
 
         Combines list_user_functions and describe_function to provide
@@ -242,7 +246,7 @@ class FunctionService:
         functions = functions_list["user_functions"]
 
         # Initialize result structure
-        result: dict = {
+        result: dict[str, Any] = {
             "catalog": catalog,
             "schema": schema,
             "function_count": len(functions),

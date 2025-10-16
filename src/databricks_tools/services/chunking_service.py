@@ -6,6 +6,7 @@ manageable chunks, managing chunking sessions, and handling session cleanup.
 
 import uuid
 from datetime import datetime, timedelta
+from typing import Any
 
 from databricks_tools.core.token_counter import TokenCounter
 
@@ -60,9 +61,11 @@ class ChunkingService:
         self.token_counter = token_counter
         self.max_tokens = max_tokens
         self.session_ttl = timedelta(minutes=session_ttl_minutes)
-        self._sessions: dict[str, dict] = {}
+        self._sessions: dict[str, dict[str, Any]] = {}
 
-    def create_chunked_response(self, data: dict, max_tokens: int | None = None) -> dict:
+    def create_chunked_response(
+        self, data: dict[str, Any], max_tokens: int | None = None
+    ) -> dict[str, Any]:
         """Create a chunked response for data that exceeds token limits.
 
         Splits large response data into manageable chunks, creates a session
@@ -172,7 +175,7 @@ class ChunkingService:
             "instructions": f"Use get_chunk(session_id='{session_id}', chunk_number=N) to retrieve each chunk (1-{total_chunks})",
         }
 
-    def get_chunk(self, session_id: str, chunk_number: int) -> dict:
+    def get_chunk(self, session_id: str, chunk_number: int) -> dict[str, Any]:
         """Retrieve a specific chunk from a chunking session.
 
         Validates the session and chunk number, retrieves the requested chunk,
@@ -217,7 +220,7 @@ class ChunkingService:
             )
 
         # Get the requested chunk (convert to 0-indexed)
-        chunk = chunks[chunk_number - 1].copy()  # Create copy to avoid mutation
+        chunk: dict[str, Any] = chunks[chunk_number - 1].copy()  # Create copy to avoid mutation
 
         # Update delivery tracking
         session["chunks_delivered"] += 1
@@ -230,7 +233,7 @@ class ChunkingService:
 
         return chunk
 
-    def get_session_info(self, session_id: str) -> dict:
+    def get_session_info(self, session_id: str) -> dict[str, Any]:
         """Get information about a chunking session.
 
         Retrieves metadata about the chunking session including total chunks,

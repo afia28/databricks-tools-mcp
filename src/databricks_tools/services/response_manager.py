@@ -5,6 +5,7 @@ token validation, and automatic chunking across all MCP tools.
 """
 
 import json
+from typing import Any
 
 from databricks_tools.core.token_counter import TokenCounter
 from databricks_tools.services.chunking_service import ChunkingService
@@ -63,7 +64,7 @@ class ResponseManager:
         self.chunking_service = chunking_service
         self.max_tokens = max_tokens
 
-    def format_response(self, data: dict | list, auto_chunk: bool = True) -> str:
+    def format_response(self, data: dict[str, Any] | list[Any], auto_chunk: bool = True) -> str:
         """Format response with automatic chunking if needed.
 
         Converts data to JSON format and checks token count. If the response
@@ -111,7 +112,7 @@ class ResponseManager:
         # Return formatted JSON (with indentation for readability)
         return json.dumps(data, indent=2, separators=(",", ":"))
 
-    def format_error(self, error_type: str, message: str, **kwargs: str | int | list) -> str:
+    def format_error(self, error_type: str, message: str, **kwargs: str | int | list[Any]) -> str:
         """Format error response consistently.
 
         Creates a standardized error response dictionary and formats it as JSON.
