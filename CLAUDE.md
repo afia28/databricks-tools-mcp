@@ -31,6 +31,7 @@ uv run pytest tests/ --cov=src/databricks_tools  # Run tests with coverage
 - `src/databricks_tools/core/token_counter.py` - Token counting utility with caching (US-2.1)
 - `src/databricks_tools/core/connection.py` - Database connection manager (US-2.2)
 - `src/databricks_tools/core/query_executor.py` - SQL query executor service (US-2.3)
+- `src/databricks_tools/core/container.py` - Application container for dependency injection (US-5.1)
 - `src/databricks_tools/security/role_manager.py` - Role-based access control manager (US-1.3)
 - `src/databricks_tools/services/catalog_service.py` - Catalog operations service (US-3.1)
 - `src/databricks_tools/services/table_service.py` - Table operations service (US-3.2)
@@ -42,6 +43,7 @@ uv run pytest tests/ --cov=src/databricks_tools  # Run tests with coverage
 - `tests/test_core/test_token_counter.py` - Token counter tests (28 tests, 100% coverage)
 - `tests/test_core/test_connection.py` - Connection manager tests (16 tests, 100% coverage)
 - `tests/test_core/test_query_executor.py` - Query executor tests (22 tests, 100% coverage)
+- `tests/test_core/test_container.py` - Application container tests (23 tests, 100% coverage)
 - `tests/test_security/test_role_manager.py` - Role manager tests (21 tests, 92% coverage)
 - `tests/test_services/test_catalog_service.py` - Catalog service tests (30 tests, 100% coverage)
 - `tests/test_services/test_table_service.py` - Table service tests (41 tests, 100% coverage)
@@ -224,3 +226,16 @@ For incremental improvements:
 - 39 tests, 100% coverage
 - Total tests: 306 tests, all passing
 - Phase 4 - Chunking & Response Management: COMPLETE
+
+**US-5.1: Create Application Container** - Completed
+- Created ApplicationContainer class in core package for dependency injection
+- Wires all 9 services with proper dependencies (role_manager, workspace_manager, token_counter, query_executor, catalog_service, table_service, function_service, chunking_service, response_manager)
+- Eliminates global state through instance-based design
+- Supports role-based configuration (ANALYST/DEVELOPER modes)
+- Configurable max_tokens parameter propagated to all services
+- Easy test container creation for unit testing
+- Multiple independent containers can coexist
+- 23 tests, 100% coverage
+- Total tests: 329 tests, all passing
+- Applied code formatting to 20 files (net -240 lines)
+- Phase 5 - Integration: IN PROGRESS

@@ -315,9 +315,7 @@ class TestResponseManagerFormatResponse:
         assert "session_id" in parsed
         assert "total_chunks" in parsed
         # Verify chunking service WAS called
-        mock_chunking_service.create_chunked_response.assert_called_once_with(
-            sample_data_large
-        )
+        mock_chunking_service.create_chunked_response.assert_called_once_with(sample_data_large)
 
     def test_format_response_large_dict_disable_auto_chunk(
         self,
@@ -435,9 +433,7 @@ class TestResponseManagerFormatResponse:
         assert parsed == nested_data
         assert parsed["level1"]["level2"]["level3"]["value"] == "deep"
 
-    def test_format_response_special_characters(
-        self, response_manager: ResponseManager
-    ):
+    def test_format_response_special_characters(self, response_manager: ResponseManager):
         """Test format_response with special characters in strings.
 
         The method should:
@@ -509,9 +505,7 @@ class TestResponseManagerFormatResponse:
         assert parsed == data
         mock_chunking_service.create_chunked_response.assert_not_called()
 
-    def test_format_response_token_count_boundary_above(
-        self, mock_chunking_service: MagicMock
-    ):
+    def test_format_response_token_count_boundary_above(self, mock_chunking_service: MagicMock):
         """Test format_response with token count just above max_tokens.
 
         The method should:
@@ -696,9 +690,7 @@ class TestResponseManagerTokenLimits:
         """
         # Arrange - create RM with max_tokens=20000
         mock_token_counter.count_tokens.return_value = 15000
-        rm = ResponseManager(
-            mock_token_counter, mock_chunking_service, max_tokens=20000
-        )
+        rm = ResponseManager(mock_token_counter, mock_chunking_service, max_tokens=20000)
         data = {"test": "data"}
 
         # Act
@@ -784,9 +776,7 @@ class TestResponseManagerTokenLimits:
 class TestResponseManagerChunkingBehavior:
     """Tests for chunking behavior verification."""
 
-    def test_chunking_service_called_when_needed(
-        self, mock_chunking_service: MagicMock
-    ):
+    def test_chunking_service_called_when_needed(self, mock_chunking_service: MagicMock):
         """Test chunking_service.create_chunked_response is called when needed.
 
         The method should:
@@ -925,10 +915,7 @@ class TestResponseManagerIntegration:
         rm = ResponseManager(token_counter, chunking_service, max_tokens=5000)
 
         large_data = {
-            "data": [
-                {"id": i, "name": f"User_{i}", "description": "X" * 100}
-                for i in range(500)
-            ],
+            "data": [{"id": i, "name": f"User_{i}", "description": "X" * 100} for i in range(500)],
             "schema": {"fields": [{"name": "id", "type": "integer"}]},
         }
 

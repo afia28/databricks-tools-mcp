@@ -62,9 +62,7 @@ class ChunkingService:
         self.session_ttl = timedelta(minutes=session_ttl_minutes)
         self._sessions: dict[str, dict] = {}
 
-    def create_chunked_response(
-        self, data: dict, max_tokens: int | None = None
-    ) -> dict:
+    def create_chunked_response(self, data: dict, max_tokens: int | None = None) -> dict:
         """Create a chunked response for data that exceeds token limits.
 
         Splits large response data into manageable chunks, creates a session
@@ -111,9 +109,7 @@ class ChunkingService:
 
         # Calculate how many rows can fit in each chunk
         base_tokens = self.token_counter.estimate_tokens(base_response)
-        available_tokens = (
-            max_tokens - base_tokens - 500
-        )  # Reserve 500 tokens for chunk metadata
+        available_tokens = max_tokens - base_tokens - 500  # Reserve 500 tokens for chunk metadata
 
         # Estimate tokens per row (using first few rows as sample)
         if rows:
@@ -285,8 +281,7 @@ class ChunkingService:
             "chunks_delivered": session["chunks_delivered"],
             "chunks_remaining": session["total_chunks"] - session["chunks_delivered"],
             "created_at": session["created_at"].isoformat(),
-            "all_chunks_delivered": session["chunks_delivered"]
-            >= session["total_chunks"],
+            "all_chunks_delivered": session["chunks_delivered"] >= session["total_chunks"],
             "next_chunk_to_request": (
                 min(session["chunks_delivered"] + 1, session["total_chunks"])
                 if session["chunks_delivered"] < session["total_chunks"]

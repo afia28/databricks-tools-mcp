@@ -266,9 +266,7 @@ class TestFunctionServiceInitialization:
         This is test case 2 from US-3.3 requirements.
         """
         # Act
-        service = FunctionService(
-            mock_query_executor, mock_token_counter, max_tokens=5000
-        )
+        service = FunctionService(mock_query_executor, mock_token_counter, max_tokens=5000)
 
         # Assert
         assert service.query_executor is mock_query_executor
@@ -300,9 +298,7 @@ class TestFunctionServiceListUserFunctions:
         This is test case 1 from US-3.3 requirements (test_function_service_list_functions).
         """
         # Arrange
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_functions_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_functions_df
 
         # Act
         result = function_service.list_user_functions("main", "default")
@@ -337,9 +333,7 @@ class TestFunctionServiceListUserFunctions:
         This is part of test case 9 from US-3.3 requirements (test_function_service_workspace_parameter).
         """
         # Arrange
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_functions_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_functions_df
 
         # Act
         result = function_service.list_user_functions(
@@ -397,22 +391,16 @@ class TestFunctionServiceListUserFunctions:
         This verifies proper delegation pattern.
         """
         # Arrange
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_functions_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_functions_df
 
         # Act
-        function_service.list_user_functions(
-            "analytics", "ml", workspace="test_workspace"
-        )
+        function_service.list_user_functions("analytics", "ml", workspace="test_workspace")
 
         # Assert - verify exact parameters passed
         mock_query_executor.execute_query_with_catalog.assert_called_once()
         call_args = mock_query_executor.execute_query_with_catalog.call_args
         assert call_args[0][0] == "analytics"  # First positional arg is catalog
-        assert (
-            call_args[0][1] == "SHOW USER FUNCTIONS IN analytics.ml"
-        )  # Second is query
+        assert call_args[0][1] == "SHOW USER FUNCTIONS IN analytics.ml"  # Second is query
         assert call_args[0][2] == "test_workspace"  # Third is workspace
 
     def test_list_user_functions_result_structure(
@@ -432,9 +420,7 @@ class TestFunctionServiceListUserFunctions:
         This verifies the result format matches US-3.3 specification.
         """
         # Arrange
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_functions_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_functions_df
 
         # Act
         result = function_service.list_user_functions("main", "default")
@@ -476,9 +462,7 @@ class TestFunctionServiceDescribeFunction:
         This is test case 2 from US-3.3 requirements (test_function_service_describe_function).
         """
         # Arrange
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_describe_function_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_describe_function_df
 
         # Act
         result = function_service.describe_function("my_func", "main", "default")
@@ -513,9 +497,7 @@ class TestFunctionServiceDescribeFunction:
         This is part of test case 9 from US-3.3 requirements (test_function_service_workspace_parameter).
         """
         # Arrange
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_describe_function_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_describe_function_df
 
         # Act
         result = function_service.describe_function(
@@ -549,9 +531,7 @@ class TestFunctionServiceDescribeFunction:
         This verifies the result format matches US-3.3 specification.
         """
         # Arrange
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_describe_function_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_describe_function_df
 
         # Act
         result = function_service.describe_function("my_func", "main", "default")
@@ -729,9 +709,7 @@ class TestFunctionServiceListAndDescribeAll:
         This verifies function name extraction logic.
         """
         # Arrange - return fully qualified function names
-        functions_df = pd.DataFrame(
-            {"function": ["catalog.schema.func1", "catalog.schema.func2"]}
-        )
+        functions_df = pd.DataFrame({"function": ["catalog.schema.func1", "catalog.schema.func2"]})
         mock_query_executor.execute_query_with_catalog.side_effect = [
             functions_df,
             sample_describe_function_df,
@@ -811,9 +789,7 @@ class TestFunctionServiceParseDescription:
         This is test case 4 from US-3.3 requirements (test_function_service_parse_description).
         """
         # Act
-        result = function_service._parse_function_description(
-            sample_describe_with_configs_df
-        )
+        result = function_service._parse_function_description(sample_describe_with_configs_df)
 
         # Assert - verify Configs line is not present
         assert "Configs:" not in result
@@ -875,9 +851,7 @@ class TestFunctionServiceParseDescription:
         This verifies the positive filtering logic.
         """
         # Act
-        result = function_service._parse_function_description(
-            sample_describe_function_df
-        )
+        result = function_service._parse_function_description(sample_describe_function_df)
 
         # Assert - verify all important lines are kept
         assert "Function: main.default.my_func" in result
@@ -903,9 +877,7 @@ class TestFunctionServiceParseDescription:
         This is CRITICAL for proper handling of multi-line parameters.
         """
         # Act
-        result = function_service._parse_function_description(
-            realistic_describe_function_df
-        )
+        result = function_service._parse_function_description(realistic_describe_function_df)
 
         # Assert - verify indented parameter lines are kept
         assert any("param3 ARRAY<STRING>" in line for line in result)
@@ -930,9 +902,7 @@ class TestFunctionServiceParseDescription:
         This verifies end-to-end parsing behavior.
         """
         # Act
-        result = function_service._parse_function_description(
-            realistic_describe_function_df
-        )
+        result = function_service._parse_function_description(realistic_describe_function_df)
 
         # Assert - verify structure
         assert isinstance(result, list)
@@ -1060,9 +1030,7 @@ class TestFunctionServiceErrorHandling:
         )
 
         # Act & Assert
-        with pytest.raises(
-            DatabricksError, match="Function 'main.default.nonexistent' not found"
-        ):
+        with pytest.raises(DatabricksError, match="Function 'main.default.nonexistent' not found"):
             function_service.describe_function("nonexistent", "main", "default")
 
         # Verify QueryExecutor was called
@@ -1084,12 +1052,8 @@ class TestFunctionServiceErrorHandling:
         )
 
         # Act & Assert
-        with pytest.raises(
-            DatabricksError, match="Catalog 'invalid_catalog' not found"
-        ):
-            function_service.list_and_describe_all_functions(
-                "invalid_catalog", "default"
-            )
+        with pytest.raises(DatabricksError, match="Catalog 'invalid_catalog' not found"):
+            function_service.list_and_describe_all_functions("invalid_catalog", "default")
 
     def test_workspace_not_found_error(
         self, function_service: FunctionService, mock_query_executor: MagicMock
@@ -1108,12 +1072,8 @@ class TestFunctionServiceErrorHandling:
         )
 
         # Act & Assert
-        with pytest.raises(
-            ValueError, match="Workspace 'nonexistent' configuration not found"
-        ):
-            function_service.list_user_functions(
-                "main", "default", workspace="nonexistent"
-            )
+        with pytest.raises(ValueError, match="Workspace 'nonexistent' configuration not found"):
+            function_service.list_user_functions("main", "default", workspace="nonexistent")
 
 
 # =============================================================================
@@ -1135,9 +1095,7 @@ class TestFunctionServiceWorkspaceParameter:
         This is part of test case 9 from US-3.3 requirements (test_function_service_workspace_parameter).
         """
         # Arrange
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_functions_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_functions_df
 
         # Act
         function_service.list_user_functions("main", "default", workspace="prod")
@@ -1157,14 +1115,10 @@ class TestFunctionServiceWorkspaceParameter:
         This is part of test case 9 from US-3.3 requirements (test_function_service_workspace_parameter).
         """
         # Arrange
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_describe_function_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_describe_function_df
 
         # Act
-        function_service.describe_function(
-            "func", "main", "default", workspace="staging"
-        )
+        function_service.describe_function("func", "main", "default", workspace="staging")
 
         # Assert
         call_args = mock_query_executor.execute_query_with_catalog.call_args
@@ -1190,9 +1144,7 @@ class TestFunctionServiceWorkspaceParameter:
         ]
 
         # Act
-        function_service.list_and_describe_all_functions(
-            "main", "default", workspace="dev"
-        )
+        function_service.list_and_describe_all_functions("main", "default", workspace="dev")
 
         # Assert - all calls should have workspace="dev"
         calls = mock_query_executor.execute_query_with_catalog.call_args_list
@@ -1213,9 +1165,7 @@ class TestFunctionServiceWorkspaceParameter:
         This is an edge case test.
         """
         # Arrange
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_functions_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_functions_df
 
         # Act
         function_service.list_user_functions("main", "default", workspace=None)
@@ -1244,9 +1194,7 @@ class TestFunctionServiceCatalogSchemaDefaults:
         This is test case 7 from US-3.3 requirements (test_function_service_catalog_schema_defaults).
         """
         # Arrange
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_functions_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_functions_df
 
         # Act
         result = function_service.list_user_functions("custom_catalog", "custom_schema")
@@ -1270,14 +1218,10 @@ class TestFunctionServiceCatalogSchemaDefaults:
         This extends test case 7 from US-3.3 requirements.
         """
         # Arrange
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_describe_function_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_describe_function_df
 
         # Act
-        result = function_service.describe_function(
-            "test_func", "analytics", "ml_models"
-        )
+        result = function_service.describe_function("test_func", "analytics", "ml_models")
 
         # Assert
         assert result["catalog"] == "analytics"
@@ -1394,9 +1338,7 @@ class TestFunctionServiceTokenCounterIntegration:
         # Arrange
         token_counter = TokenCounter(model="gpt-4")
         service = FunctionService(mock_query_executor, token_counter, max_tokens=5000)
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_functions_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_functions_df
 
         # Act
         functions = service.list_user_functions("main", "default")
@@ -1429,9 +1371,7 @@ class TestFunctionServiceTokenCounterIntegration:
         # Arrange
         token_counter = TokenCounter(model="gpt-4")
         service = FunctionService(mock_query_executor, token_counter, max_tokens=9000)
-        mock_query_executor.execute_query_with_catalog.return_value = (
-            sample_describe_function_df
-        )
+        mock_query_executor.execute_query_with_catalog.return_value = sample_describe_function_df
 
         # Act
         details = service.describe_function("my_func", "main", "default")

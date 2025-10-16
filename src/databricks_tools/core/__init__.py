@@ -5,7 +5,13 @@ including token counting, connection management, query execution, and response h
 """
 
 from databricks_tools.core.connection import ConnectionManager
+from databricks_tools.core.container import ApplicationContainer
 from databricks_tools.core.query_executor import QueryExecutor
 from databricks_tools.core.token_counter import TokenCounter
 
-__all__ = ["TokenCounter", "ConnectionManager", "QueryExecutor"]
+__all__ = [
+    "ApplicationContainer",
+    "ConnectionManager",
+    "QueryExecutor",
+    "TokenCounter",
+]

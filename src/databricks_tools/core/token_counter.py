@@ -113,9 +113,7 @@ class TokenCounter:
         json_string = json.dumps(data, separators=(",", ":"))
         return self.count_tokens(json_string)
 
-    def estimate_response_tokens(
-        self, data: dict, include_formatting: bool = True
-    ) -> int:
+    def estimate_response_tokens(self, data: dict, include_formatting: bool = True) -> int:
         """Estimate tokens for a complete response with optional formatting.
 
         When include_formatting is True, uses indented JSON which is more

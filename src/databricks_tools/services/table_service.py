@@ -286,9 +286,7 @@ class TableService:
         data_records = df.to_dict(orient="records")
 
         # Extract schema from DataFrame columns
-        schema_fields = [
-            {"name": str(col), "type": str(dtype)} for col, dtype in df.dtypes.items()
-        ]
+        schema_fields = [{"name": str(col), "type": str(dtype)} for col, dtype in df.dtypes.items()]
 
         result = {
             "table_name": f"{catalog}.{schema}.{table_name}",

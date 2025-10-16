@@ -42,17 +42,13 @@ _catalog_service = CatalogService(_query_executor, _token_counter, MAX_RESPONSE_
 _table_service = TableService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
 
 # Function service instance
-_function_service = FunctionService(
-    _query_executor, _token_counter, MAX_RESPONSE_TOKENS
-)
+_function_service = FunctionService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
 
 # Chunking service instance
 _chunking_service = ChunkingService(_token_counter, MAX_RESPONSE_TOKENS)
 
 # AIDEV-NOTE: Response manager instance for centralized response formatting and token validation
-_response_manager = ResponseManager(
-    _token_counter, _chunking_service, MAX_RESPONSE_TOKENS
-)
+_response_manager = ResponseManager(_token_counter, _chunking_service, MAX_RESPONSE_TOKENS)
 
 
 # Constants and Configuration
@@ -358,9 +354,7 @@ async def get_table_details(
         If response exceeds token limits, returns chunked response information.
     """
     # Use TableService to get table details
-    result = _table_service.get_table_details(
-        catalog, schema, table_name, limit, workspace
-    )
+    result = _table_service.get_table_details(catalog, schema, table_name, limit, workspace)
 
     # AIDEV-NOTE: ResponseManager automatically handles token checking and chunking
     return _response_manager.format_response(result)
@@ -773,9 +767,7 @@ async def list_and_describe_all_functions(
             )
 
     # Use FunctionService to list and describe all functions
-    result = _function_service.list_and_describe_all_functions(
-        catalog, schema, workspace
-    )
+    result = _function_service.list_and_describe_all_functions(catalog, schema, workspace)
 
     # AIDEV-NOTE: ResponseManager automatically handles token checking and chunking
     formatted_result = _response_manager.format_response(result)
@@ -784,7 +776,13 @@ async def list_and_describe_all_functions(
 
 def main():
     """Main entry point for the databricks-tools MCP server."""
-    global _role_manager, _workspace_manager, _query_executor, _catalog_service, _table_service, _function_service
+    global \
+        _role_manager, \
+        _workspace_manager, \
+        _query_executor, \
+        _catalog_service, \
+        _table_service, \
+        _function_service
 
     # Parse command-line arguments for role-based access control
     parser = argparse.ArgumentParser(description="Databricks MCP Server")
@@ -804,17 +802,11 @@ def main():
         # Reinitialize query executor with updated workspace manager
         _query_executor = QueryExecutor(_workspace_manager)
         # Reinitialize catalog service with updated query executor
-        _catalog_service = CatalogService(
-            _query_executor, _token_counter, MAX_RESPONSE_TOKENS
-        )
+        _catalog_service = CatalogService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
         # Reinitialize table service with updated query executor
-        _table_service = TableService(
-            _query_executor, _token_counter, MAX_RESPONSE_TOKENS
-        )
+        _table_service = TableService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
         # Reinitialize function service with updated query executor
-        _function_service = FunctionService(
-            _query_executor, _token_counter, MAX_RESPONSE_TOKENS
-        )
+        _function_service = FunctionService(_query_executor, _token_counter, MAX_RESPONSE_TOKENS)
 
     # Initialize and run the server
     mcp.run(transport="stdio")

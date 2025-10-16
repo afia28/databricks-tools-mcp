@@ -88,8 +88,7 @@ def sample_data_small() -> dict:
     """
     return {
         "data": [
-            {"id": i, "name": f"User_{i}", "email": f"user{i}@example.com"}
-            for i in range(10)
+            {"id": i, "name": f"User_{i}", "email": f"user{i}@example.com"} for i in range(10)
         ],
         "schema": {
             "fields": [
@@ -158,9 +157,7 @@ def sample_data_empty() -> dict:
 class TestChunkingServiceInitialization:
     """Tests for ChunkingService initialization."""
 
-    def test_chunking_service_initialization_with_dependencies(
-        self, mock_token_counter: MagicMock
-    ):
+    def test_chunking_service_initialization_with_dependencies(self, mock_token_counter: MagicMock):
         """Test ChunkingService initializes with required dependencies.
 
         The ChunkingService should:
@@ -182,9 +179,7 @@ class TestChunkingServiceInitialization:
         assert service._sessions == {}
         assert isinstance(service._sessions, dict)
 
-    def test_chunking_service_initialization_custom_parameters(
-        self, mock_token_counter: MagicMock
-    ):
+    def test_chunking_service_initialization_custom_parameters(self, mock_token_counter: MagicMock):
         """Test ChunkingService accepts custom parameters.
 
         The ChunkingService should:
@@ -195,9 +190,7 @@ class TestChunkingServiceInitialization:
         This verifies parameter customization.
         """
         # Act
-        service = ChunkingService(
-            mock_token_counter, max_tokens=5000, session_ttl_minutes=120
-        )
+        service = ChunkingService(mock_token_counter, max_tokens=5000, session_ttl_minutes=120)
 
         # Assert
         assert service.token_counter is mock_token_counter
@@ -513,9 +506,7 @@ class TestChunkingServiceGetChunk:
         assert chunk["chunking_info"]["chunks_delivered"] == total_chunks
         assert chunk["chunking_info"]["all_chunks_delivered"] is True
 
-    def test_chunking_service_get_chunk_invalid_session(
-        self, chunking_service: ChunkingService
-    ):
+    def test_chunking_service_get_chunk_invalid_session(self, chunking_service: ChunkingService):
         """Test get_chunk raises ValueError for invalid session_id.
 
         The method should:

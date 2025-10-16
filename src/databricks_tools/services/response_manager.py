@@ -111,9 +111,7 @@ class ResponseManager:
         # Return formatted JSON (with indentation for readability)
         return json.dumps(data, indent=2, separators=(",", ":"))
 
-    def format_error(
-        self, error_type: str, message: str, **kwargs: str | int | list
-    ) -> str:
+    def format_error(self, error_type: str, message: str, **kwargs: str | int | list) -> str:
         """Format error response consistently.
 
         Creates a standardized error response dictionary and formats it as JSON.
