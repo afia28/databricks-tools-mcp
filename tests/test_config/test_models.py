@@ -146,7 +146,7 @@ class TestWorkspaceConfig:
         config = WorkspaceConfig(
             server_hostname="https://my-workspace.cloud.databricks.com",
             http_path="/sql/1.0/warehouses/abc123",
-            access_token=valid_long_token,
+            access_token=valid_long_token,  # type: ignore[arg-type]
         )
 
         assert config.access_token.get_secret_value() == valid_long_token

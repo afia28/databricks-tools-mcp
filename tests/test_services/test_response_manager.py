@@ -260,7 +260,7 @@ class TestResponseManagerFormatResponse:
         # Verify formatted with indent
         assert "\n" in result
         # Verify chunking service NOT called
-        response_manager.chunking_service.create_chunked_response.assert_not_called()
+        response_manager.chunking_service.create_chunked_response.assert_not_called()  # type: ignore[attr-defined]
 
     def test_format_response_small_list(
         self, response_manager: ResponseManager, sample_data_list: list
@@ -285,7 +285,7 @@ class TestResponseManagerFormatResponse:
         parsed = json.loads(result)
         assert parsed == small_list
         assert "\n" in result
-        response_manager.chunking_service.create_chunked_response.assert_not_called()
+        response_manager.chunking_service.create_chunked_response.assert_not_called()  # type: ignore[attr-defined]
 
     def test_format_response_large_dict_auto_chunk(
         self,
@@ -616,7 +616,7 @@ class TestResponseManagerFormatError:
         result = response_manager.format_error(
             "ConfigError",
             "Invalid configuration",
-            config={"host": "localhost", "port": 8080},
+            config={"host": "localhost", "port": 8080},  # type: ignore[arg-type]
             errors=[{"field": "host", "issue": "unreachable"}],
         )
 

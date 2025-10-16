@@ -120,11 +120,20 @@ uv run ruff format .
 # Lint code
 uv run ruff check .
 
-# Install pre-commit hooks
+# Type checking
+uv run mypy .
+
+# Install pre-commit hooks (includes mypy, pytest, coverage)
 uv run pre-commit install
 
-# Run pre-commit checks
+# Run pre-commit checks (includes type checking, tests, 85% coverage threshold)
 uv run pre-commit run --all-files
+
+# Run tests manually
+uv run pytest tests/
+
+# Run tests with coverage
+uv run pytest tests/ --cov=src/databricks_tools --cov-report=term-missing
 ```
 
 ## Project Structure

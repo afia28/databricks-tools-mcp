@@ -198,10 +198,11 @@ class WorkspaceConfig(BaseModel):
         workspace_name = prefix.rstrip("_").lower() if prefix else "default"
 
         # Create and validate the config
+        # Type ignore comments needed because mypy doesn't understand that None values were already checked above
         return cls(
-            server_hostname=server_hostname,
-            http_path=http_path,
-            access_token=access_token,
+            server_hostname=server_hostname,  # type: ignore[arg-type]
+            http_path=http_path,  # type: ignore[arg-type]
+            access_token=access_token,  # type: ignore[arg-type]
             workspace_name=workspace_name,
         )
 

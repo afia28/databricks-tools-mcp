@@ -242,7 +242,7 @@ class FunctionService:
         functions = functions_list["user_functions"]
 
         # Initialize result structure
-        result = {
+        result: dict = {
             "catalog": catalog,
             "schema": schema,
             "function_count": len(functions),
