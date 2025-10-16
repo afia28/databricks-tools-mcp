@@ -693,8 +693,8 @@ class TestQueryExecutorIntegration:
 class TestLegacyWrapperFunctions:
     """Tests for server.py wrapper functions."""
 
-    @patch("databricks_tools.server._query_executor")
-    def test_databricks_sql_query_wrapper(self, mock_executor: MagicMock):
+    @patch("databricks_tools.server._container")
+    def test_databricks_sql_query_wrapper(self, mock_container: MagicMock):
         """Test databricks_sql_query() wrapper function.
 
         The wrapper should:
@@ -709,7 +709,7 @@ class TestLegacyWrapperFunctions:
 
         # Arrange
         mock_df = pd.DataFrame({"value": [1, 2, 3]})
-        mock_executor.execute_query.return_value = mock_df
+        mock_container.query_executor.execute_query.return_value = mock_df
 
         # Act
         result = databricks_sql_query(
@@ -718,12 +718,12 @@ class TestLegacyWrapperFunctions:
 
         # Assert
         pd.testing.assert_frame_equal(result, mock_df)
-        mock_executor.execute_query.assert_called_once_with(
+        mock_container.query_executor.execute_query.assert_called_once_with(
             "SELECT * FROM table", "production", ["date_col"]
         )
 
-    @patch("databricks_tools.server._query_executor")
-    def test_databricks_sql_query_with_catalog_wrapper(self, mock_executor: MagicMock):
+    @patch("databricks_tools.server._container")
+    def test_databricks_sql_query_with_catalog_wrapper(self, mock_container: MagicMock):
         """Test databricks_sql_query_with_catalog() wrapper function.
 
         The wrapper should:
@@ -738,7 +738,7 @@ class TestLegacyWrapperFunctions:
 
         # Arrange
         mock_df = pd.DataFrame({"id": [1, 2], "name": ["Alice", "Bob"]})
-        mock_executor.execute_query_with_catalog.return_value = mock_df
+        mock_container.query_executor.execute_query_with_catalog.return_value = mock_df
 
         # Act
         result = databricks_sql_query_with_catalog(
@@ -747,12 +747,12 @@ class TestLegacyWrapperFunctions:
 
         # Assert
         pd.testing.assert_frame_equal(result, mock_df)
-        mock_executor.execute_query_with_catalog.assert_called_once_with(
+        mock_container.query_executor.execute_query_with_catalog.assert_called_once_with(
             "my_catalog", "SELECT * FROM table", "production"
         )
 
-    @patch("databricks_tools.server._query_executor")
-    def test_wrapper_functions_default_parameters(self, mock_executor: MagicMock):
+    @patch("databricks_tools.server._container")
+    def test_wrapper_functions_default_parameters(self, mock_container: MagicMock):
         """Test wrapper functions with default parameters.
 
         The wrappers should:
@@ -769,8 +769,8 @@ class TestLegacyWrapperFunctions:
 
         # Arrange
         mock_df = pd.DataFrame({"value": [42]})
-        mock_executor.execute_query.return_value = mock_df
-        mock_executor.execute_query_with_catalog.return_value = mock_df
+        mock_container.query_executor.execute_query.return_value = mock_df
+        mock_container.query_executor.execute_query_with_catalog.return_value = mock_df
 
         # Act - databricks_sql_query with defaults
         databricks_sql_query("SELECT 1")
@@ -779,8 +779,8 @@ class TestLegacyWrapperFunctions:
         databricks_sql_query_with_catalog("catalog", "SELECT 1")
 
         # Assert
-        mock_executor.execute_query.assert_called_once_with("SELECT 1", None, None)
-        mock_executor.execute_query_with_catalog.assert_called_once_with(
+        mock_container.query_executor.execute_query.assert_called_once_with("SELECT 1", None, None)
+        mock_container.query_executor.execute_query_with_catalog.assert_called_once_with(
             "catalog", "SELECT 1", None
         )
 

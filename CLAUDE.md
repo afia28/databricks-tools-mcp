@@ -50,6 +50,7 @@ uv run pytest tests/ --cov=src/databricks_tools  # Run tests with coverage
 - `tests/test_services/test_function_service.py` - Function service tests (36 tests, 100% coverage)
 - `tests/test_services/test_chunking_service.py` - Chunking service tests (30 tests, 100% coverage)
 - `tests/test_services/test_response_manager.py` - Response manager tests (39 tests, 100% coverage)
+- `tests/test_server/test_mcp_tools.py` - MCP tools integration tests (48 tests, 100% coverage)
 - `pyproject.toml` - Project configuration and dependencies
 - `.env` - Databricks workspace credentials (not in git)
 
@@ -238,4 +239,16 @@ For incremental improvements:
 - 23 tests, 100% coverage
 - Total tests: 329 tests, all passing
 - Applied code formatting to 20 files (net -240 lines)
+
+**US-5.2: Refactor MCP Tools to Use ApplicationContainer** - Completed
+- Replaced 9 global service variables with single ApplicationContainer instance
+- Updated all 13 MCP tools to use container.{service} pattern
+- Updated 7 legacy wrapper functions to delegate through container
+- Simplified main() function from 36 to 20 lines (44% reduction)
+- Reduced server.py by 47 net lines through refactoring (28% code reduction)
+- Added 48 integration tests in tests/test_server/test_mcp_tools.py
+- Maintained 100% backward compatibility with existing tool signatures
+- Achieved 99% test coverage with 377/377 tests passing
+- All 6 acceptance criteria met and validated
+- Total tests: 377 tests, all passing
 - Phase 5 - Integration: IN PROGRESS

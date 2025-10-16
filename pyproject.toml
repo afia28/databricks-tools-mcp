@@ -69,4 +69,5 @@ indent-style = "space"
 [dependency-groups]
 dev = [
     "freezegun>=1.5.5",
+    "pytest-cov>=7.0.0",
 ]

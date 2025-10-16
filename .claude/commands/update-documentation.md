@@ -13,7 +13,6 @@ This command is the **final step** in implementing a user story. It updates all 
 1. **Analyzes All Changes**: Reviews git status and diff to understand what was implemented
 2. **Updates Documentation**:
    - README.md with new features and usage examples
-   - CLAUDE.md with status updates and metrics
    - Command and subagent documentation
 3. **Commits Changes**: Creates detailed commit messages following conventional commits
 4. **Pushes to Remote**: Pushes all commits to the remote repository
@@ -60,11 +59,8 @@ Update sections based on changes:
 
 ### Step 4: Update CLAUDE.md
 Update key sections:
-- Current Status (mark completed tasks)
 - Project Structure diagram
-- Recent Accomplishments (add new completed features)
 - Code Quality Metrics (update test counts and coverage)
-- Next Steps (remove completed items, add new ones)
 
 ### Step 5: Update Command Documentation
 If new commands were added, update:
@@ -227,7 +223,6 @@ Step 2: Updating documentation...
    - Updated project structure
 
 ✅ Updated CLAUDE.md:
-   - Marked Task 2.3 as complete
    - Updated test count: 173 tests
    - Updated coverage: 89%
 
@@ -272,10 +267,10 @@ This command integrates with the full workflow:
 
 ```mermaid
 graph LR
-    A[/implement-user-story] --> B[/run-tests]
-    B --> C[/validate-implementation]
-    C --> D[/lint]
-    D --> E[/update-documentation]
+    A[implement-user-story] --> B[run-tests]
+    B --> C[validate-implementation]
+    C --> D[lint]
+    D --> E[update-documentation]
     E --> F[Complete!]
 ```
 
