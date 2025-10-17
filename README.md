@@ -59,7 +59,7 @@ cp .env.example .env
 # Edit .env with your Databricks credentials
 ```
 
-See [INSTALLATION.md](INSTALLATION.md) for detailed installation instructions, troubleshooting, and platform-specific guidance.
+See [docs/guides/INSTALLATION.md](docs/guides/INSTALLATION.md) for detailed installation instructions, troubleshooting, and platform-specific guidance.
 
 ### Configuration
 
@@ -140,7 +140,7 @@ Add to Claude Desktop config (`~/Library/Application Support/Claude/claude_deskt
 - Ideal for technical users
 - Run: `uv run databricks-tools --developer`
 
-See [ROLES.md](ROLES.md) for detailed information.
+See [docs/development/ROLES.md](docs/development/ROLES.md) for detailed information.
 
 ## Development
 
@@ -227,7 +227,7 @@ databricks-tools-clean/
 
 ## Architecture
 
-This project follows clean architecture principles with a modular, type-safe design. See [ARCHITECTURE.md](ARCHITECTURE.md) for comprehensive documentation.
+This project follows clean architecture principles with a modular, type-safe design. See [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) for comprehensive documentation.
 
 ### Design Patterns
 
@@ -254,7 +254,7 @@ MCP Client → Server (13 Tools) → ApplicationContainer → Services → Core 
 - **Security Layer** - Role-based access control with strategy pattern
 - **Configuration** - Pydantic models for type-safe configuration
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed diagrams and data flow documentation.
+See [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) for detailed diagrams and data flow documentation.
 
 ## Usage Examples
 
@@ -299,11 +299,25 @@ See [examples/](examples/) for more comprehensive examples.
 
 ## Documentation
 
-- [INSTALLATION.md](INSTALLATION.md) - Detailed installation guide with troubleshooting
-- [ARCHITECTURE.md](ARCHITECTURE.md) - Architecture documentation with design patterns and diagrams
-- [CLAUDE.md](CLAUDE.md) - Development guide for Claude Code
-- [ROLES.md](ROLES.md) - Role-based access control details
+### Main Documentation
+- [README.md](README.md) - This file - Quick start and overview
 - [CHANGELOG.md](CHANGELOG.md) - Version history and release notes
+- [CLAUDE.md](CLAUDE.md) - Development guide for Claude Code
+
+### User Guides
+- [docs/guides/INSTALLATION.md](docs/guides/INSTALLATION.md) - Detailed installation guide with troubleshooting
+- [docs/guides/PROJECT_SETUP.md](docs/guides/PROJECT_SETUP.md) - Developer environment setup
+
+### Architecture & Design
+- [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) - Architecture documentation with design patterns and diagrams
+
+### Development Documentation
+- [docs/development/ROLES.md](docs/development/ROLES.md) - Role-based access control details
+- [docs/development/USER_STORY_FRAMEWORK.md](docs/development/USER_STORY_FRAMEWORK.md) - User story creation framework
+- [docs/development/USER_STORY_AUTOMATION_WALKTHROUGH.md](docs/development/USER_STORY_AUTOMATION_WALKTHROUGH.md) - Automation guide
+- [docs/development/IMPLEMENTATION_SUMMARY.md](docs/development/IMPLEMENTATION_SUMMARY.md) - Implementation summaries
+
+### Examples & Configuration
 - [examples/](examples/) - Usage examples and patterns
 - `.env.example` - Configuration options
 

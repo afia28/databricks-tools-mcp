@@ -31,7 +31,8 @@ user_stories/
 │   ├── US-6.3-type-hints.md
 │   └── US-6.4-documentation.md
 └── phase-7-distribution/   # Distribution & Deployment
-    └── US-7.1-pip-installation-and-initialization.md
+    ├── US-7.1-pip-installation-and-initialization.md
+    └── US-7.2-private-pypi-publishing.md
 ```
 
 ## User Story Template
@@ -175,10 +176,10 @@ cat user_stories/phase-2-core/US-2.4-query-caching.md
 
 ## Total Progress
 
-- **Total Stories**: 17
+- **Total Stories**: 18
 - **Completed**: 0
 - **In Progress**: 0
-- **Not Started**: 17
+- **Not Started**: 18
 
 ## Resources
 

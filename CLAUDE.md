@@ -26,6 +26,7 @@ uv run pytest tests/ --cov=src/databricks_tools  # Run tests with coverage
 
 ## Project Structure
 
+### Source Code
 - `src/databricks_tools/server.py` - Main MCP server with all 13 tools
 - `src/databricks_tools/cli/init.py` - CLI initialization command (US-7.1)
 - `src/databricks_tools/config/models.py` - Pydantic configuration models (US-1.1)
@@ -41,6 +42,8 @@ uv run pytest tests/ --cov=src/databricks_tools  # Run tests with coverage
 - `src/databricks_tools/services/function_service.py` - UDF operations service (US-3.3)
 - `src/databricks_tools/services/chunking_service.py` - Response chunking service (US-4.1)
 - `src/databricks_tools/services/response_manager.py` - Response formatting manager (US-4.2)
+
+### Tests
 - `tests/test_cli/test_init.py` - CLI initialization tests (15 tests, 95% coverage)
 - `tests/test_config/test_models.py` - Configuration model tests (32 tests, 100% coverage)
 - `tests/test_config/test_workspace.py` - Workspace manager tests (14 tests, 94% coverage)
@@ -56,11 +59,29 @@ uv run pytest tests/ --cov=src/databricks_tools  # Run tests with coverage
 - `tests/test_services/test_chunking_service.py` - Chunking service tests (30 tests, 100% coverage)
 - `tests/test_services/test_response_manager.py` - Response manager tests (39 tests, 100% coverage)
 - `tests/test_server/test_mcp_tools.py` - MCP tools integration tests (48 tests, 100% coverage)
+
+### Configuration & Documentation
 - `pyproject.toml` - Project configuration and dependencies
 - `mypy.ini` - Type checking configuration for mypy
 - `.pre-commit-config.yaml` - Pre-commit hooks with mypy, pytest, coverage
 - `.env` - Databricks workspace credentials (not in git)
-- `INSTALLATION.md` - Comprehensive installation guide for end users (US-7.1)
+- `README.md` - Main project documentation (root)
+- `CHANGELOG.md` - Version history and release notes (root)
+- `CLAUDE.md` - Claude Code instructions (root)
+- `docs/guides/INSTALLATION.md` - End user installation guide
+- `docs/guides/PROJECT_SETUP.md` - Developer setup guide
+- `docs/architecture/ARCHITECTURE.md` - Technical design documentation
+- `docs/development/USER_STORY_FRAMEWORK.md` - User story creation framework
+- `docs/development/USER_STORY_AUTOMATION_WALKTHROUGH.md` - Automation guide
+- `docs/development/ROLES.md` - Role definitions and responsibilities
+- `docs/development/IMPLEMENTATION_SUMMARY.md` - Implementation summaries
+- `.claude/DOCUMENTATION_GUIDELINES.md` - Documentation placement rules
+
+### Examples
+- `examples/basic_usage.py` - Basic operations and error handling
+- `examples/advanced_queries.py` - Complex SQL and multi-workspace queries
+- `examples/custom_service.py` - Creating custom services
+- `examples/testing_example.py` - Testing patterns and strategies
 
 ## Key Features
 
@@ -589,3 +610,56 @@ uv run pytest --cov=src/databricks_tools --cov-fail-under=85  # Coverage
 - ✅ Cross-platform support (macOS/Linux/Windows)
 - ✅ Organization-ready distribution (pip-installable)
 - ✅ Thorough documentation (for developers and end users)
+
+---
+
+## Documentation Organization Guidelines
+
+### Where to Place Documentation Files
+
+**Root Directory (Keep Only These):**
+- `README.md` - Primary project documentation and quick start guide
+- `CHANGELOG.md` - Version history and release notes
+- `CLAUDE.md` - Claude Code instructions (this file)
+
+**docs/ Directory Structure:**
+- `docs/guides/` - User-facing guides and tutorials
+  - Installation guides for end users
+  - Setup guides for developers
+  - Quick start tutorials
+- `docs/architecture/` - Technical design documentation
+  - System architecture documents
+  - Design pattern explanations
+  - Component diagrams and data flows
+- `docs/development/` - Internal development documentation
+  - User story frameworks
+  - Development workflows
+  - Implementation summaries
+  - Team roles and responsibilities
+
+**Examples Directory:**
+- `examples/` - Executable code examples
+  - Basic usage examples
+  - Advanced patterns
+  - Testing examples
+  - Integration examples
+
+**Claude Configuration:**
+- `.claude/` - Claude Code configuration files
+  - Slash commands
+  - Subagent definitions
+  - Settings and preferences
+  - **DOCUMENTATION_GUIDELINES.md** - Detailed documentation rules (see this file)
+
+### Creating New Documentation
+
+When creating new documentation files, follow these rules:
+
+1. **User-facing guides** → `docs/guides/`
+2. **Technical architecture docs** → `docs/architecture/`
+3. **Development processes** → `docs/development/`
+4. **Code examples** → `examples/`
+5. **Project-wide changes** → Update `CHANGELOG.md` in root
+6. **Quick reference** → Update `README.md` in root
+
+For more detailed guidelines, see `.claude/DOCUMENTATION_GUIDELINES.md`
