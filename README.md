@@ -167,6 +167,39 @@ uv run pytest tests/
 uv run pytest tests/ --cov=src/databricks_tools --cov-report=term-missing
 ```
 
+## CI/CD & Releases
+
+The project includes automated CI/CD pipelines for testing, linting, and publishing releases.
+
+### Automated Workflows
+
+- **CI Workflow** - Runs on all pushes and PRs to validate code quality and run tests
+- **Publish Workflow** - Automatically publishes to private PyPI when version tags are pushed
+- **Claude Code Review** - Provides AI-powered code review on pull requests
+
+### Creating a Release
+
+```bash
+# Update version in src/databricks_tools/__init__.py
+# Update CHANGELOG.md with release notes
+
+# Commit changes
+git add src/databricks_tools/__init__.py CHANGELOG.md
+git commit -m "chore: bump version to 0.3.0"
+git push origin main
+
+# Create and push version tag
+git tag v0.3.0
+git push origin v0.3.0
+
+# GitHub Actions will automatically:
+# 1. Build source distribution and wheel
+# 2. Publish to private PyPI
+# 3. Create GitHub release with artifacts
+```
+
+See [docs/guides/CICD_SETUP.md](docs/guides/CICD_SETUP.md) for comprehensive CI/CD setup, configuration, and troubleshooting.
+
 ## Project Structure
 
 ```
@@ -214,8 +247,10 @@ databricks-tools-clean/
          test_chunking_service.py # Chunking service tests (30 tests, 100% coverage)
          test_response_manager.py # Response manager tests (39 tests, 100% coverage)
    .github/workflows/
-      ci.yml              # CI/CD pipeline
-      claude-code.yml     # Claude Code integration
+      ci.yml              # CI pipeline (linting, testing)
+      publish.yml         # Publish to private PyPI on version tags
+      claude-code-review.yml # Claude Code review
+      claude.yml          # Claude integration
    .claude/
       CLAUDE.md           # Development guide
       settings.local.json # Claude permissions
@@ -307,6 +342,7 @@ See [examples/](examples/) for more comprehensive examples.
 ### User Guides
 - [docs/guides/INSTALLATION.md](docs/guides/INSTALLATION.md) - Detailed installation guide with troubleshooting
 - [docs/guides/PROJECT_SETUP.md](docs/guides/PROJECT_SETUP.md) - Developer environment setup
+- [docs/guides/CICD_SETUP.md](docs/guides/CICD_SETUP.md) - CI/CD pipeline setup and release management
 
 ### Architecture & Design
 - [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) - Architecture documentation with design patterns and diagrams

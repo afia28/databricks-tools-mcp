@@ -1,13 +1,6 @@
 ---
 name: devops-config
 description: DevOps and configuration expert for production-ready systems, CLI design, and user experience. Use proactively for configuration management, CLI interfaces, error handling, and production deployment considerations.
-tools:
-  - Read
-  - Edit
-  - Bash
-  - Grep
-  - Glob
-  - mcp__sequential-thinking__sequentialthinking
 model: inherit
 color: green
 ---

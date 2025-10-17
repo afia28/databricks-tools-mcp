@@ -1,0 +1,77 @@
+name: Publish to Private PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write  # Required for creating GitHub releases
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build distributions
+        run: python scripts/build.py
+
+      - name: Publish to private PyPI
+        env:
+          PYPI_BACKEND: ${{ vars.PYPI_BACKEND }}
+          DEVPI_INDEX_URL: ${{ secrets.DEVPI_INDEX_URL }}
+          DEVPI_TOKEN: ${{ secrets.DEVPI_TOKEN }}
+          ARTIFACTORY_PYPI_URL: ${{ secrets.ARTIFACTORY_PYPI_URL }}
+          ARTIFACTORY_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}
+          CODEARTIFACT_DOMAIN: ${{ secrets.CODEARTIFACT_DOMAIN }}
+          CODEARTIFACT_REPOSITORY: ${{ secrets.CODEARTIFACT_REPOSITORY }}
+          AWS_CODEARTIFACT_TOKEN: ${{ secrets.AWS_CODEARTIFACT_TOKEN }}
+          GITLAB_PROJECT_ID: ${{ secrets.GITLAB_PROJECT_ID }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          AZURE_ORG: ${{ secrets.AZURE_ORG }}
+          AZURE_PROJECT: ${{ secrets.AZURE_PROJECT }}
+          AZURE_FEED: ${{ secrets.AZURE_FEED }}
+          AZURE_ARTIFACTS_TOKEN: ${{ secrets.AZURE_ARTIFACTS_TOKEN }}
+        run: python scripts/publish.py
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+          body: |
+            Release ${{ github.ref_name }}
+
+            ## Installation
+
+            Install from private PyPI:
+            ```bash
+            pip install databricks-tools --index-url ${{ secrets.DEVPI_INDEX_URL }}
+            ```
+
+            ## Upgrade
+
+            Upgrade to this version:
+            ```bash
+            pip install --upgrade databricks-tools --index-url ${{ secrets.DEVPI_INDEX_URL }}
+            ```
+
+            ## What's Changed
+
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md) for detailed changes.

@@ -15,14 +15,14 @@ from databricks_tools.config.installer import ConfigInstaller
 console = Console()
 
 
-@click.command(name="init")  # type: ignore[misc]
-@click.option(  # type: ignore[misc]
+@click.command(name="init")
+@click.option(
     "--force",
     is_flag=True,
     default=False,
     help="Overwrite existing configuration without prompting",
 )
-@click.option(  # type: ignore[misc]
+@click.option(
     "--mode",
     type=click.Choice(["analyst", "developer"], case_sensitive=False),
     help="Installation mode (analyst=single workspace, developer=multiple workspaces)",

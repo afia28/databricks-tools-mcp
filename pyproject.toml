@@ -8,7 +8,7 @@ license = {text = "MIT"}
 authors = [
     {name = "Ahmed Afia", email = "afia.ahmed.28@gmail.com"}
 ]
-keywords = ["databricks", "mcp", "sql", "unity-catalog", "mcp-server"]
+keywords = ["databricks", "mcp", "sql", "unity-catalog", "mcp-server", "data-tools"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -37,6 +37,8 @@ dev = [
     "pytest>=8.4.1",
     "pre-commit>=4.2.0",
     "ruff>=0.7.4",
+    "build>=1.0.0",
+    "twine>=5.0.0",
 ]
 
 # Entry points for running the server and CLI
@@ -47,30 +49,40 @@ databricks-tools-init = "databricks_tools.cli.init:init_command"
 [project.urls]
 Homepage = "https://github.com/afia28/databricks-tools"
 Repository = "https://github.com/afia28/databricks-tools"
+Documentation = "https://github.com/afia28/databricks-tools#readme"
 Issues = "https://github.com/afia28/databricks-tools/issues"
+Changelog = "https://github.com/afia28/databricks-tools/blob/main/CHANGELOG.md"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.18.0"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/databricks_tools"]
-
-# Exclude documentation and development files from package
-[tool.hatch.build.targets.wheel.force-include]
+[tool.hatch.version]
+path = "src/databricks_tools/__init__.py"
 
 [tool.hatch.build]
+include = [
+    "src/databricks_tools/**/*.py",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+]
 exclude = [
+    "*.pyc",
+    "__pycache__",
+    ".git",
+    ".env*",
+    "tests/",
     "docs/",
     "examples/",
-    "tests/",
     "user_stories/",
     ".claude/",
     ".github/",
-    "*.md",
-    "!README.md",  # Include README.md
-    "!CHANGELOG.md",  # Include CHANGELOG.md
+    "scripts/",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/databricks_tools"]
 
 # Ruff configuration
 [tool.ruff]
