@@ -56,6 +56,65 @@ Each user story follows this structure:
 9. **Definition of Done**: Checklist for completion
 10. **Expected Outcome**: What success looks like
 
+## Creating New User Stories
+
+### Automated Story Generation
+
+You can automatically generate comprehensive user stories from feature descriptions using the `/define-user-story` command:
+
+```bash
+/define-user-story "Add query result caching to improve performance"
+```
+
+**What Gets Generated:**
+- Complete story with all 10 sections populated
+- Automatic phase classification (1-6)
+- Story ID auto-assignment (US-{phase}.{number})
+- 7-10 comprehensive acceptance criteria
+- 10-20 detailed test case scenarios
+- LOC estimation
+- Dependency detection
+- Architecture design (via python-architect consultation)
+- Test scenarios (via test-strategist consultation)
+
+**The Generation Process:**
+1. **Parse** - Extract requirements from your description
+2. **Analyze** - Study existing codebase for context
+3. **Classify** - Determine appropriate phase
+4. **Generate** - Create complete story structure
+5. **Consult Experts** - Get architecture and test guidance
+6. **Validate** - Run 12-point quality checklist
+7. **Save** - Write to user_stories/phase-{N}/
+
+**Example Generated Output:**
+```
+✅ Story US-2.4 created successfully!
+📄 user_stories/phase-2-core/US-2.4-query-caching.md
+🚀 Ready to implement with: /implement-user-story US-2.4
+```
+
+### Story Creation Best Practices
+
+**Good Feature Descriptions:**
+- ✅ "Add query result caching with configurable TTL and LRU eviction"
+- ✅ "Implement connection pooling with pool size 5-20"
+- ✅ "Create export functionality for CSV, JSON, and Parquet formats"
+
+**Too Vague:**
+- ❌ "Make it faster"
+- ❌ "Add a service"
+- ❌ "Improve the code"
+
+### Complete Story Creation Guide
+
+For detailed guidance on creating effective user stories, see:
+- **[Story Creation Guide](STORY_CREATION_GUIDE.md)** - Comprehensive guide with examples, troubleshooting, and best practices
+
+### Story Template
+
+The template used for all stories (both manual and generated) is available at:
+- **[templates/user_story_template.md](templates/user_story_template.md)** - Complete template with placeholders
+
 ## Execution Order
 
 Stories must be implemented in sequence within each phase:
@@ -69,9 +128,59 @@ Stories must be implemented in sequence within each phase:
 - ✅ Complete
 - ⚠️ Blocked
 
+## Development Workflow
+
+### Complete Feature Lifecycle
+
+```mermaid
+graph LR
+    A[💡 Feature Idea] --> B[/define-user-story]
+    B --> C[📄 User Story Generated]
+    C --> D{Review & Approve}
+    D -->|Refine| B
+    D -->|Approve| E[/implement-user-story]
+    E --> F[🚀 Production Ready]
+
+    style A fill:#4CAF50,color:#fff
+    style C fill:#2196F3,color:#fff
+    style F fill:#4CAF50,color:#fff
+```
+
+### Standard Workflow
+
+1. **Define**: `/define-user-story "feature description"` → Generates US-X.X
+2. **Review**: Check generated story for completeness
+3. **Refine**: Request changes if needed
+4. **Implement**: `/implement-user-story US-X.X` → Automated implementation
+5. **Deploy**: Feature goes to production
+
+### Example End-to-End
+
+```bash
+# Step 1: Generate story
+/define-user-story "Add query result caching for performance"
+# → Generates US-2.4-query-caching.md
+
+# Step 2: Review generated story
+cat user_stories/phase-2-core/US-2.4-query-caching.md
+
+# Step 3: Implement story
+/implement-user-story US-2.4
+# → Automated: design, code, test, validate, commit
+
+# Step 4: Story complete!
+```
+
 ## Total Progress
 
 - **Total Stories**: 16
 - **Completed**: 0
 - **In Progress**: 0
 - **Not Started**: 16
+
+## Resources
+
+- **[Story Creation Guide](STORY_CREATION_GUIDE.md)** - Complete guide for creating user stories
+- **[Story Template](templates/user_story_template.md)** - Template with placeholders
+- **[Commands Documentation](../.claude/commands.md)** - All available slash commands
+- **[Subagents Documentation](../.claude/subagents.md)** - Specialized agents including story-architect

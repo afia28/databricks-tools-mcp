@@ -111,6 +111,31 @@ This directory contains specialized subagents for this project. Each subagent ha
   - Creating user-focused documentation
   - **Proactive Use**: Automatically invoked for configuration and CLI tasks
 
+### 🟠 story-architect
+- **File**: `.claude/agents/story-architect.md`
+- **Model**: Opus (Color: Orange)
+- **Tools**: Read, Glob, Grep, Write, Task
+- **Purpose**: Requirements analyst and user story generator that transforms feature ideas into implementation-ready user stories
+- **Core Expertise**:
+  - Natural language processing for feature descriptions
+  - Codebase analysis and context understanding
+  - Requirements engineering and technical writing
+  - Phase classification (1-6) and story ID assignment
+  - Acceptance criteria generation (7-10 testable items)
+  - Consultation with python-architect for architecture design
+  - Consultation with test-strategist for test scenarios
+  - 12-point quality validation checklist
+  - Complete story template population (all 10 sections)
+
+- **When to use**:
+  - When you have a feature idea but no user story yet
+  - To transform natural language descriptions into structured stories
+  - To automatically classify features and assign appropriate phases
+  - To generate comprehensive acceptance criteria and test cases
+  - To ensure consistent story format and quality
+  - Before running `/implement-user-story` when story doesn't exist
+  - **Proactive Use**: Invoked by `/define-user-story` command
+
 ## Usage Examples
 
 ### Explicit Invocation
@@ -121,6 +146,11 @@ Subagents can be invoked explicitly in Claude Code:
 "I've finished implementing the performance monitoring user story"
 "The batch processing feature is complete, please finalize it"
 "Finalize and prepare US-4.2 for merge to main"
+
+# Story Architect (Generate User Stories)
+"Generate a user story for adding query result caching"
+"Create a story for implementing connection pooling with configurable pool size"
+"I need a story for adding Delta Lake time travel support"
 
 # Python Architecture
 "Review the DataProcessor class architecture and suggest improvements"
@@ -145,6 +175,7 @@ Subagents can be invoked explicitly in Claude Code:
 
 ### Automatic Delegation
 Claude Code will automatically delegate tasks to appropriate subagents based on context:
+- **Story definition** → story-architect (via `/define-user-story` command)
 - **Feature completion** → user-story-finalizer (CRITICAL - always invoked)
 - **Database operations** → data-engineer
 - **New feature implementation** → test-strategist (for tests)
@@ -153,6 +184,7 @@ Claude Code will automatically delegate tasks to appropriate subagents based on 
 
 ### Proactive Invocation
 Certain agents are invoked proactively:
+- **story-architect**: By `/define-user-story` command for story generation
 - **user-story-finalizer**: ALWAYS after feature completion is declared
 - **data-engineer**: When database operations are detected
 - **test-strategist**: After implementing new features
@@ -162,6 +194,7 @@ Certain agents are invoked proactively:
 
 | Agent | Model | Color | Tools | Proactive |
 |-------|-------|-------|-------|-----------|
+| story-architect | Opus | 🟠 Orange | Read, Glob, Grep, Write, Task | Yes |
 | user-story-finalizer | Inherit | 🟣 Purple | Default | Yes (CRITICAL) |
 | python-architect | Sonnet | 🔴 Red | Default | No |
 | data-engineer | Sonnet | 🔵 Blue | Default | Yes |
@@ -172,29 +205,36 @@ Certain agents are invoked proactively:
 
 ### When to Use Each Agent
 
-1. **ALWAYS use user-story-finalizer** when:
+1. **Use story-architect** when:
+   - You have a feature idea but no user story document yet
+   - You want to transform a natural language description into a structured story
+   - You need comprehensive acceptance criteria and test cases generated
+   - You want automatic phase classification and story ID assignment
+   - Via `/define-user-story` command
+
+2. **ALWAYS use user-story-finalizer** when:
    - Declaring any feature or user story complete
    - Before merging any branch to main
    - After implementing significant changes
    - To ensure production readiness
    - **This is CRITICAL and NON-NEGOTIABLE**
 
-2. **Start with python-architect** when:
+3. **Start with python-architect** when:
    - Beginning a new feature to design the architecture
    - Refactoring existing code for better structure
    - Optimizing performance at the code level
 
-3. **Consult data-engineer** for:
+4. **Consult data-engineer** for:
    - Any Databricks or DuckDB specific operations
    - Performance issues with data transfer
    - Schema mapping challenges
 
-4. **Engage test-strategist** to:
+5. **Engage test-strategist** to:
    - Ensure comprehensive test coverage
    - Debug complex test failures
    - Design test strategies for new features
 
-5. **Use devops-config** for:
+6. **Use devops-config** for:
    - User-facing interfaces (CLI, configuration)
    - Production deployment planning
    - Error handling and user experience
@@ -205,11 +245,12 @@ Agents can be used sequentially for comprehensive solutions:
 
 ```mermaid
 graph LR
-    A[Requirements] --> B[python-architect<br/>Design Architecture]
-    B --> C[data-engineer<br/>Optimize Data Flow]
-    C --> D[devops-config<br/>Configure & Deploy]
-    D --> E[test-strategist<br/>Validate Everything]
-    E --> F[user-story-finalizer<br/>CRITICAL: Final QA & Merge]
+    A[Feature Idea] --> B[story-architect<br/>Generate User Story]
+    B --> C[python-architect<br/>Design Architecture]
+    C --> D[data-engineer<br/>Optimize Data Flow]
+    D --> E[devops-config<br/>Configure & Deploy]
+    E --> F[test-strategist<br/>Validate Everything]
+    F --> G[user-story-finalizer<br/>CRITICAL: Final QA & Merge]
 ```
 
 ## Management

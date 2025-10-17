@@ -4,7 +4,7 @@ This directory contains custom slash commands for this project. These commands a
 
 ## 📋 Complete Command Inventory
 
-Total Commands: **8 slash commands** for comprehensive project automation
+Total Commands: **9 slash commands** for comprehensive project automation
 
 ## Available Commands
 
@@ -18,6 +18,38 @@ Total Commands: **8 slash commands** for comprehensive project automation
   - Establishes project context for better assistance
 - **When to use**: Start of a new session or when context needs refreshing
 - **Example**: `/prime` (no arguments needed)
+
+### 📝 /define-user-story
+- **File**: `.claude/commands/define-user-story.md`
+- **Purpose**: Generate a comprehensive user story from a feature description
+- **Usage**: `/define-user-story [feature-description]`
+- **Allowed Tools**: Read, Glob, Grep, Write, Task, TodoWrite
+- **What it does**:
+  - Delegates to story-architect agent for story generation
+  - Parses feature description and extracts requirements
+  - Analyzes existing codebase for context
+  - Classifies feature type and assigns appropriate phase
+  - Generates complete story with all 10 sections
+  - Consults python-architect for architecture design
+  - Consults test-strategist for test scenarios
+  - Validates against 12-point quality checklist
+  - Saves to user_stories/ directory
+- **Example scenarios**:
+  ```bash
+  /define-user-story "Add query result caching to improve performance"
+  /define-user-story "Implement connection pooling with configurable pool size"
+  /define-user-story "Add support for Delta Lake time travel queries"
+  ```
+- **Key features**:
+  - Automatic phase classification (1-6)
+  - Story ID auto-assignment
+  - LOC estimation
+  - Dependency detection
+  - Comprehensive acceptance criteria (7-10 items)
+  - Detailed test cases (10-20 scenarios)
+  - 12-point quality validation
+- **Output**: Complete, implementation-ready user story saved to `user_stories/phase-{N}-{name}/US-{phase}.{number}-{slug}.md`
+- **Next step**: Review generated story, then run `/implement-user-story US-{phase}.{number}`
 
 ### 🚀 /implement-user-story
 - **File**: `.claude/commands/implement-user-story.md`
@@ -215,18 +247,21 @@ All commands include:
 # 1. Start session with context
 /prime
 
-# 2. Implement new feature
+# 2. Define new feature (optional - if story doesn't exist)
+/define-user-story "Add query result caching for performance"
+
+# 3. Implement the feature
 /implement-user-story US-3.4
 
-# 3. Validate and test
+# 4. Validate and test
 /run-tests coverage
 /validate-implementation
 
-# 4. Fix any issues
+# 5. Fix any issues
 /lint
 /debug-config
 
-# 5. Update documentation
+# 6. Update documentation
 /update-documentation
 ```
 
@@ -268,11 +303,12 @@ Commands can be used together for comprehensive workflows:
 ### Feature Development Pipeline
 ```mermaid
 graph LR
-    A[/prime] --> B[/implement-user-story]
-    B --> C[/run-tests]
-    C --> D[/lint]
-    D --> E[/validate-implementation]
-    E --> F[/update-documentation]
+    A[/prime] --> B[/define-user-story]
+    B --> C[/implement-user-story]
+    C --> D[/run-tests]
+    D --> E[/lint]
+    E --> F[/validate-implementation]
+    F --> G[/update-documentation]
 ```
 
 ### Debugging Pipeline
@@ -288,6 +324,7 @@ graph LR
 
 ### 🚀 Development Commands
 - `/prime` - Initialize context
+- `/define-user-story` - Generate user story from feature description
 - `/implement-user-story` - Feature implementation
 - `/lint` - Code quality
 
@@ -307,10 +344,11 @@ graph LR
 ### Command Usage Guidelines
 
 1. **Start New Sessions**: Always run `/prime` at the beginning
-2. **Feature Development**: Use `/implement-user-story` for structured implementation
-3. **Regular Validation**: Run `/validate-implementation` before commits
-4. **Performance Monitoring**: Periodically run `/analyze-performance`
-5. **Documentation Updates**: Use `/update-documentation` after major changes
+2. **Feature Definition**: Use `/define-user-story` to create implementation-ready stories from ideas
+3. **Feature Development**: Use `/implement-user-story` for structured implementation
+4. **Regular Validation**: Run `/validate-implementation` before commits
+5. **Performance Monitoring**: Periodically run `/analyze-performance`
+6. **Documentation Updates**: Use `/update-documentation` after major changes
 
 ### Command Development Guidelines
 
@@ -324,6 +362,7 @@ When creating new commands:
 ### Integration with Subagents
 
 Commands can leverage subagents:
+- `/define-user-story` → Uses story-architect, python-architect, test-strategist
 - `/implement-user-story` → Uses python-architect, specialized domain agents
 - `/run-tests` → Can invoke test-strategist for analysis
 - `/debug-config` → May use devops-config for recommendations
