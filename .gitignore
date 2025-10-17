@@ -53,7 +53,7 @@ Thumbs.db
 # Project specific
 .databricks/
 *.p8
-uv.lock
+# uv.lock should be committed for reproducible builds
 
 # Type checking
 .mypy_cache/
