@@ -18,9 +18,38 @@ A Model Context Protocol (MCP) server for Databricks Unity Catalog exploration w
 
 ### Installation
 
+**Option 1: Interactive Wizard (Recommended)**
+
+The easiest way to get started:
+
+```bash
+# Clone the repository
+git clone https://github.com/afia28/databricks-tools.git
+cd databricks-tools
+
+# Install dependencies
+uv sync
+
+# Run interactive setup wizard
+uv run databricks-tools-init
+
+# Follow the prompts to configure your workspace
+# Restart Claude Desktop when complete
+```
+
+The wizard will:
+- Guide you through credential collection
+- Validate your Databricks connection
+- Update Claude Desktop configuration automatically
+- Create a secure `.env` file
+
+**Option 2: Manual Installation**
+
+For advanced users or custom setups:
+
 ```bash
 # Clone/navigate to the repository
-cd databricks-tools-clean
+cd databricks-tools
 
 # Install dependencies
 uv sync
@@ -29,6 +58,8 @@ uv sync
 cp .env.example .env
 # Edit .env with your Databricks credentials
 ```
+
+See [INSTALLATION.md](INSTALLATION.md) for detailed installation instructions, troubleshooting, and platform-specific guidance.
 
 ### Configuration
 
@@ -268,6 +299,7 @@ See [examples/](examples/) for more comprehensive examples.
 
 ## Documentation
 
+- [INSTALLATION.md](INSTALLATION.md) - Detailed installation guide with troubleshooting
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Architecture documentation with design patterns and diagrams
 - [CLAUDE.md](CLAUDE.md) - Development guide for Claude Code
 - [ROLES.md](ROLES.md) - Role-based access control details

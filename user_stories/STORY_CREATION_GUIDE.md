@@ -22,10 +22,10 @@ That's it! The system will automatically:
 
 ```mermaid
 graph LR
-    IDEA([💡 Feature Idea]) --> CMD[/define-user-story]
+    IDEA([💡 Feature Idea]) --> CMD["/define-user-story"]
     CMD --> GEN[🟠 Story Architect<br/>Generates Story]
-    GEN --> REVIEW{📖 Review}
-    REVIEW -->|✅ Approve| IMPL[/implement-user-story]
+    GEN --> REVIEW{'📖 Review'}
+    REVIEW -->|✅ Approve| IMPL["/implement-user-story"]
     REVIEW -->|✏️ Refine| GEN
     IMPL --> PROD([🚀 Production])
 
@@ -126,7 +126,7 @@ Add support for custom SQL functions to enable domain-specific computations
 
 ```mermaid
 graph TD
-    START[/define-user-story] --> PARSE[1. Parse Feature Description]
+    START["/define-user-story"] --> PARSE[1. Parse Feature Description]
     PARSE --> ANALYZE[2. Analyze Codebase]
     ANALYZE --> CLASSIFY[3. Classify & Assign ID]
     CLASSIFY --> STORY[4. Generate Story Statement]
